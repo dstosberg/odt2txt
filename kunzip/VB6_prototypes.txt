@@ -1,0 +1,207 @@
+
+' kunzip.dll - Copyright 2005 by Michael Kohn
+
+' http://www.mikekohn.net/
+' mike@mikekohn.net
+
+' Feel Free to email me if you have questions or comments.
+
+' This DLL was created to make decompressing of .zip files easy from
+' VB6 or such.  The following is a list of function and how to use them:
+
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+' kunzip_inflate_init: Init the decompressor.  Must be called only once. 
+'               
+' Example: Call kunzip_inflate_init()
+
+Declare Function kunzip_inflate_init Lib "kunzip.dll" _
+                        () As Long
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+' kunzip_inflate_free: Frees global variables in the decmopressor.
+'                      To avoid a memory leak, call this when you
+'                      are done with kunzip.
+'               
+' Example: Call kunzip_inflate_free()
+
+Declare Function kunzip_inflate_free Lib "kunzip.dll" _
+                        () As Long
+
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+' kunzip_count_files:  Send a full path to a filename and this function
+'                      will return how many files are in this archive
+'
+' Example: Count = kunzip_count_files("c:\temp\myzipfile.zip")
+
+Declare Function kunzip_count_files Lib "kunzip.dll" _
+                        (ByVal FileName As String) As Long
+
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+' kunzip_all: unarchive all files in FileName, saving all the unarchived
+'             contents in the BaseDir destination directory
+'
+' Example: ReturnCode = kunzip_all("c:\temp\myzipfile.zip","c:\destdir")
+'
+' ReturnCode of 0 is good
+' ReturnCode of -1 is bad
+' ReturnCode of -2 is bad (could not create directories)
+' ReturnCode of -3 is bad (could not open file)
+' ReturnCode of -4 is bad (bad checksum)
+
+Declare Function kunzip_all Lib "kunzip.dll" _
+                        (ByVal FileName As String, _
+                         ByVal BaseDir As String) As Long
+
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+' kunzip_next: Uncompress the next file in the archive
+'              The offset is the offset to the start of the next file in
+'              the archive.  The offset should start as 0 to unarchive
+'              the first file.  The return value is the Offset to the next
+'              file in the archive. 
+'
+' Example:
+' Dim Offset As Long
+'   Offset = 0
+'   Offset = kunzip_next("c:\temp\myfile.zip","c:\destdir",Offset)
+'   Offset = kunzip_next("c:\temp\myfile.zip","c:\destdir",Offset)
+'
+' If kunzip_next returns -1, then there are no more files in the archive
+' otherwise it will return the new offset.  The code above will decompress
+' 2 files.  return of -4 means bad checksum
+
+
+Declare Function kunzip_next Lib "kunzip.dll" _
+                        (ByVal FileName As String, _
+                         ByVal BaseDir As String, _
+                         ByVal Offset As Long) As Long
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+' kunzip_get_name: Get the name of the file that is located at the current
+'                  offset.
+'
+'
+' Example:
+' Dim ArcFileName As String * 128
+' Dim Offset As Long
+'   RetCode = kunzip_get_name(Text1.Text, ArcFileName, Offset)
+'   Label1.Caption = "Extracting: " & ArcFileName
+
+
+Declare Function kunzip_get_name Lib "kunzip.dll" _
+                        (ByVal FileName As String, _
+                         ByVal Name As String, _
+                         ByVal Offset As Long) As Long
+
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+' kunzip_get_version: Puts the kunzip version in a String variable
+'
+'               
+' Example:
+' Dim Version As String * 128
+'  Call kunzip_get_version(Version)
+
+Declare Function kunzip_get_version Lib "kunzip.dll" _
+                        (ByVal Version As String) As Long
+
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+' kunzip_print_version: Prints the version to stdout
+'
+'               
+' Example:
+'  Call kunzip_print_version()
+
+Declare Function kunzip_print_version Lib "kunzip.dll" _
+                        () As Long
+
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+' kunzip_get_offset_by_number: Get the offset from the file count
+'          starting at 0.  For example, if you want the offset of the
+'          4th file in the archive, you can do:
+'
+'   Offset = kunzip_get_offset_by_number(Text1.Text, 3)
+'            (3 since file count starts at 0)
+'
+
+Declare Function kunzip_get_offset_by_number Lib "kunzip.dll" _
+                        (ByVal FileName As String, _
+                         ByVal FileCount As Long) As Long
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+' kunzip_get_offset_by_name: Get the offset of the file name.  For example,
+'              if you know you have a file in your archive called Blah/mike.c
+'              you can do:
+'
+'   Offset = kunzip_get_offset_by_name("Blah.zip","mike.c",0,-1)
+'   Offset = kunzip_get_offset_by_name("Blah.zip","mike.c",0,Offset)
+'
+'   If the Offset passed to the function is -1, kunzip will grab the
+'   first name in the archive that matches "mike.c".  Since the second
+'   line above gives the offset to the first occurence of "mike.c",
+'   this offset is skipped over and the second line should return the
+'   second occurence of "mike.c" or -1 if it couldn't find it.
+'
+'   Offset = kunzip_get_offset_by_name("Blah.zip","Blah/mike.c",3,-1)
+'
+'   The line above will search through Blah.zip for a filename that
+'   exactly matches "Blah/mike.c" and return its offset or -1 if it
+'   can't find it.
+'
+'   MatchFlags mean:
+'         bit 0: set to 1 for the exact filename
+'                set to 0 if looking for a partial match
+'         bit 1: set to 1 for case sensitivity on
+'                set to 0 to ignore case sensitivity
+'
+'     In other words: MatchFlags=0 means ignore case and find partial match
+'                     MatchFlags=1 means ignore case but must be exact match
+'                     MatchFlags=2 means case sensitive and partial match
+'                     MatchFlags=3 means case sensitive exact match
+'
+
+Declare Function kunzip_get_offset_by_name Lib "kunzip.dll" _
+                        (ByVal FileName As String, _
+                         ByVal Name As String, _
+                         ByVal MatchFlags As Long, _
+                         ByVal Offset As Long) As Long
+
+
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+' kunzip_get_filesize: Get the size of the file that is located at the current
+'                  offset.
+'
+'
+' Example:
+'   Dim FileSize as Long
+'   FileSize = kunzip_get_name(Text1.Text, Offset)
+'   Label1.Caption = "Size In Bytes: " & FileSize
+
+
+Declare Function kunzip_get_filesize Lib "kunzip.dll" _
+                        (ByVal FileName As String, _
+                         ByVal Offset As Long) As Long
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+' kunzip_get_modtime: Get the modification time of the file that is
+'                     located at the current offset.
+'
+'
+' Example:
+'   Dim ModTime as Long
+'   ModTime = kunzip_get_modtime(Text1.Text, Offset)
+'   Label1.Caption = "Seconds since Jan 1, 1970: " & ModTime
+
+
+Declare Function kunzip_get_modtime Lib "kunzip.dll" _
+                        (ByVal FileName As String, _
+                         ByVal Offset As Long) As Long
+
+
+

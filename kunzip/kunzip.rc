@@ -1,0 +1,27 @@
+VS_VERSION_INFO VERSIONINFO
+  FILEVERSION    1,1,0,0
+  PRODUCTVERSION 1,1,0,0
+  FILEFLAGSMASK  0x3fL
+  FILEFLAGS 0x0L
+  FILEOS 0x40004L
+  FILETYPE 0x1L
+  FILESUBTYPE 0x0L
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4"
+    BEGIN
+      VALUE "CompanyName", "Naken Software" 
+      VALUE "FileDescription", "Unzip DLL" 
+      VALUE "FileVersion",  "V1.01" 
+      VALUE "InternalName", "kunzip" 
+      VALUE "LegalCopyright", "Copyright 2005 - Michael Kohn / http://www.mikekohn.et/" 
+      VALUE "OriginalFilename", "kunzip" 
+      VALUE "ProductName", "kunzip - by Michael Kohn / mike@mikekohn.net" 
+      VALUE "ProductVersion", "V1.01" 
+      VALUE "Comments", "http://www.mikekohn.net/  mike@mikekohn.net" 
+    END
+  END
+END
+
+

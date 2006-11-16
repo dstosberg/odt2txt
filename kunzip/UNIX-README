@@ -1,0 +1,27 @@
+
+If you'd like to build the libkunzip.so library for Linux/FreeBSD/Unix etc,
+type: make lib
+
+This should create a libkunzip.so which you will need to copy into one
+of your lib directories, probably /usr/local/lib
+
+On a Linux system you will then need to type: ldconfig
+otherwise the operating system will not know you copied the library
+there.
+
+If you still have problems with the library not being found, you
+may have to set your LD_LIBRARY_PATH environment variable to point
+to the directory where the libkunzip.so library exists or play with
+your /etc/ld.so.conf file.
+
+You can then copy the kunzip.h file to /usr/local/include
+
+There is an example program how to use the library at:
+
+http://www.mikekohn.net/kunzip.php
+
+If you have any questions, feel free to email me.
+
+/mike
+
+
