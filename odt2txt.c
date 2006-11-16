@@ -12,6 +12,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "kunzip/kunzip.h"
+
 #ifndef HAVE_STRLCPY
 #include "strlcpy.c"
 #endif
@@ -32,29 +34,41 @@ void usage(void)
 	exit(EXIT_FAILURE);
 }
 
-const char *tmpdir()
+const char *create_tmpdir()
 {
-	char *dirnam, *tmpdir;
+	char *dirnam;
+	char *tmpdir;
+	char *pid;
+	size_t pidlen;
 	size_t left = PATH_MAX;
 	int r;
 
+	pid = malloc(20);
+	pidlen = snprintf(pid, 20,  "%d", (int)getpid());
+	if (pidlen >= 20 || pidlen <= 0) {
+		fprintf(stderr, "Couldn't get pid\n");
+		exit(EXIT_FAILURE);
+	}
+
 	tmpdir = getenv("TMPDIR");
 	if (!tmpdir)
-		tmpdir = "/home";
+		tmpdir = "/tmp";
 
 	dirnam = malloc(left);
 	*dirnam = '\0';
 	strlcat(dirnam, tmpdir, left);
 	strlcat(dirnam, "/", left);
-	strlcpy(dirnam, "odt2txt", left);
-	left = strlcpy(dirnam, "/", left);
+	strlcat(dirnam, "odt2txt-", left);
+	strlcat(dirnam, pid, left);
+	left = strlcat(dirnam, "/", left);
 
-	if (left > PATH_MAX) {
+	if (left >= PATH_MAX) {
+		fprintf(stderr, "path too long");
 		exit(1);
 	}
 
 	r = mkdir(dirnam, S_IRWXU);
-	if (!r) {
+	if (r != 0) {
 		fprintf(stderr, "Cannot create %s: %s", dirnam, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
@@ -136,17 +150,76 @@ void output(char *docbuf)
 	free(outbuf);
 }
 
+/*
 void read_odt(char **buf, const char *filename)
 {
-	char *sample = "asdasd";
-	const char *tmp = tmpdir();
+	int offset;
+	const char *tmpdir = create_tmpdir();
+	const char *sample = " balsdcasdc\n";
+	const char *content_file = malloc(PATH_MAX);
+
+
+	kunzip_inflate_init();
+	offset = kunzip_get_offset_by_name((char*)filename, "content.xml", 3, -1);
+
+	if(!offset) {
+		fprintf(stderr, "Can't open %s: Is it an OpenDocument Text?\n", filename);
+		exit(EXIT_FAILURE);
+	}
+
+	kunzip_next((char*)filename, (char*)tmpdir, offset);
+
+	
 
 	*buf = malloc(50);
-	strlcpy(*buf, sample, 50);
+	snprintf(*buf, 50, "%s", filename);
+	strlcat(*buf, sample, 50);
+
+	kunzip_inflate_free();
+}
+*/
+
+const char *unzip_doc(const char *filename, const char *tmpdir)
+{
+	int r;
+	char *content_file;
+	struct stat st;
+
+	kunzip_inflate_init();
+	r = kunzip_get_offset_by_name((char*)filename, "content.xml", 3, -1);
+
+	if(!r) {
+		fprintf(stderr, "Can't open %s: Is it an OpenDocument Text?\n", filename);
+		exit(EXIT_FAILURE);
+	}
+
+	r = kunzip_next((char*)filename, (char*)tmpdir, r);
+	kunzip_inflate_free();
+
+	content_file = malloc(PATH_MAX);
+	*content_file = '\0';
+	strlcpy(content_file, tmpdir, PATH_MAX);
+	r = strlcat(content_file, "content.xml", PATH_MAX);
+
+	if (r >= PATH_MAX) {
+		fprintf(stderr, "unzip_doc: name too long\n");
+		exit(EXIT_FAILURE);
+	}
+
+	r = stat(content_file, &st);
+	if (r) {
+		fprintf(stderr, "Unzipping file failed. %s does not exist: %s\n",
+			content_file, strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	return(content_file);
 }
 
 int main(int argc, const char **argv)
 {
+	const char *tmpdir;
+	const char *docfile;
 	char *docbuf;
 	int i = 1;
 	setlocale(LC_ALL, "");
@@ -186,12 +259,15 @@ int main(int argc, const char **argv)
 		}
 	}
 
-	read_odt(&docbuf, opt_filename);
+	tmpdir = create_tmpdir();
+	docfile = unzip_doc(opt_filename, tmpdir);
 
-	fprintf(stderr, "debug: raw: %d, encoding: %s, width: %d, file: %s\n",
-		opt_raw, opt_encoding, opt_width, opt_filename);
+	//read_odt(&docbuf, opt_filename);
 
-	output(docbuf);
+	fprintf(stderr, "debug: raw: %d, encoding: %s, width: %d, file: %s, docfile: %s\n",
+		opt_raw, opt_encoding, opt_width, opt_filename, docfile);
+
+	//output(docbuf);
 
 	exit(EXIT_SUCCESS);
 }
