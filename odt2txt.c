@@ -2,6 +2,7 @@
 #include <sys/types.h>
 
 #include <errno.h>
+#include <fcntl.h>
 #include <iconv.h>
 #include <langinfo.h>
 #include <limits.h>
@@ -22,6 +23,8 @@ static int opt_raw;
 static char *opt_encoding;
 static int opt_width = 65;
 static const char *opt_filename;
+
+#define BUF_SZ 4096
 
 void usage(void)
 {
@@ -150,35 +153,6 @@ void output(char *docbuf)
 	free(outbuf);
 }
 
-/*
-void read_odt(char **buf, const char *filename)
-{
-	int offset;
-	const char *tmpdir = create_tmpdir();
-	const char *sample = " balsdcasdc\n";
-	const char *content_file = malloc(PATH_MAX);
-
-
-	kunzip_inflate_init();
-	offset = kunzip_get_offset_by_name((char*)filename, "content.xml", 3, -1);
-
-	if(!offset) {
-		fprintf(stderr, "Can't open %s: Is it an OpenDocument Text?\n", filename);
-		exit(EXIT_FAILURE);
-	}
-
-	kunzip_next((char*)filename, (char*)tmpdir, offset);
-
-	
-
-	*buf = malloc(50);
-	snprintf(*buf, 50, "%s", filename);
-	strlcat(*buf, sample, 50);
-
-	kunzip_inflate_free();
-}
-*/
-
 const char *unzip_doc(const char *filename, const char *tmpdir)
 {
 	int r;
@@ -216,12 +190,50 @@ const char *unzip_doc(const char *filename, const char *tmpdir)
 	return(content_file);
 }
 
+size_t read_doc(char **buf, const char *filename)
+{
+	int fd;
+	char *bufp;
+	size_t fpos = 0;
+	size_t buf_sz = BUF_SZ;
+
+	*buf  = malloc(buf_sz);
+	bufp = *buf;
+
+	fd = open(filename, O_RDONLY);
+	if (fd == -1) {
+		fprintf(stderr, "Can't open %s: %s\n", filename, strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	while (1) {
+		size_t read_sz;
+
+		read_sz = read(fd, bufp, BUF_SZ);
+
+		if (read_sz == -1) {
+			fprintf(stderr, "Can't read from %s: %s\n", filename, strerror(errno));
+			exit(EXIT_FAILURE);
+		} else if (read_sz == 0)
+			break;
+
+		fpos += read_sz;
+		*buf = realloc(*buf, buf_sz + read_sz);
+		bufp = *buf + fpos;
+	}
+
+	close(fd);
+	return(fpos);
+}
+
 int main(int argc, const char **argv)
 {
 	const char *tmpdir;
 	const char *docfile;
+	size_t doclen;
 	char *docbuf;
 	int i = 1;
+
 	setlocale(LC_ALL, "");
 
 	while (argv[i]) {
@@ -261,13 +273,11 @@ int main(int argc, const char **argv)
 
 	tmpdir = create_tmpdir();
 	docfile = unzip_doc(opt_filename, tmpdir);
+	doclen = read_doc(&docbuf, docfile);
 
-	//read_odt(&docbuf, opt_filename);
+	fprintf(stderr, "debug: raw: %d, encoding: %s, width: %d, file: %s, docfile: %s, doclen: %u\n",
+		opt_raw, opt_encoding, opt_width, opt_filename, docfile, doclen);
 
-	fprintf(stderr, "debug: raw: %d, encoding: %s, width: %d, file: %s, docfile: %s\n",
-		opt_raw, opt_encoding, opt_width, opt_filename, docfile);
-
-	//output(docbuf);
-
+	output(docbuf);
 	exit(EXIT_SUCCESS);
 }
