@@ -1,0 +1,16 @@
+DESCRIPTION "Unzip Library by Michael Kohn / http://www.mikekohn.net/"
+EXPORTS
+
+  kunzip_all
+  kunzip_count_files
+  kunzip_next
+  kunzip_get_name
+  kunzip_inflate_init
+  kunzip_inflate_free
+  kunzip_get_version
+  kunzip_print_version
+  kunzip_get_offset_by_number
+  kunzip_get_offset_by_name
+  kunzip_get_filesize
+  kunzip_get_modtime
+

@@ -1,0 +1,26 @@
+
+Thanks to Jernej Simoncic for these:
+
+Also, here are the declarations for kunzip.dll for use with Inno Setup
+<http://www.jrsoftware.org/isinfo.php>. I have tested the first 4, but the
+rest should work, too:
+
+function kunzip_inflate_init(): Integer; external
+'kunzip_inflate_init@files:kunzip.dll cdecl';
+function kunzip_inflate_free(): Integer; external
+'kunzip_inflate_free@files:kunzip.dll cdecl';
+function kunzip_get_name(Filename, Name: String; Offset: Integer): Integer;
+external 'kunzip_get_name@files:kunzip.dll cdecl';
+function kunzip_next(Filename,Basedir: String; Offset: Integer): Integer;
+external 'kunzip_next@files:kunzip.dll cdecl';
+
+function kunzip_count_files(FileName: String): Integer; external
+'kunzip_count_files@files:kunzip.dll cdecl';
+function kunzip_all(FileName, BaseDir: String): Integer; external
+'kunzip_all@files:kunzip.dll cdecl';
+function kunzip_get_version(Version: String): Integer; external
+'kunzip_get_version@files:kunzip.dll cdecl';
+function kunzip_print_version(): Integer; external
+'kunzip_print_version@files:kunzip.dll cdecl';
+
+
