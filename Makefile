@@ -1,10 +1,8 @@
 
-CFLAGS = -DZIP
-
 ifdef RELEASE
-CFLAGS += -O2 -DQUIET
+CFLAGS = -O2 -DQUIET
 else
-CFLAGS += -O0 -g -Wall
+CFLAGS = -O0 -g -Wall
 endif
 
 KUNZIP_OBJS = kunzip/fileio.o kunzip/zipfile.o kunzip/kinflate.o

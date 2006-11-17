@@ -21,6 +21,7 @@ Michael Kohn <mike@mikekohn.net>
 */
 
 #define WINDOW_SIZE 32768
+#define ZIP
 
 struct bitstream_t
 {
