@@ -13,11 +13,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "stringops.h"
 #include "kunzip/kunzip.h"
-
-#ifndef HAVE_STRLCPY
-#include "strlcpy.c"
-#endif
 
 static int opt_raw;
 static char *opt_encoding;
@@ -274,6 +271,8 @@ int main(int argc, const char **argv)
 	tmpdir = create_tmpdir();
 	docfile = unzip_doc(opt_filename, tmpdir);
 	doclen = read_doc(&docbuf, docfile);
+
+
 
 	fprintf(stderr, "debug: raw: %d, encoding: %s, width: %d, file: %s, docfile: %s, doclen: %u\n",
 		opt_raw, opt_encoding, opt_width, opt_filename, docfile, doclen);
