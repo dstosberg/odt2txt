@@ -17,6 +17,7 @@ struct zip_local_file_header_t
   int extra_field_length;
   char *file_name;
   unsigned char *extra_field;
+  int descriptor_length;
 };
 
 
