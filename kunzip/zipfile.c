@@ -263,8 +263,8 @@ struct tm my_tm;
   printf("unzipping: %s\n",outname);
 #endif
 
-/*  if (local_file_header.uncompressed_size!=0)
-    { */
+  if (local_file_header.uncompressed_size!=0)
+  {
     out=fopen(outname,"wb+");
     if (out==0)
     {
@@ -321,12 +321,12 @@ That's MS-DOS time format btw.. which zip files use..
     my_utimbuf.modtime=date_time;
     utime(outname,&my_utimbuf);
 
-    if (checksum!=local_file_header.crc_32 && local_file_header.crc_32 != 0)
+    if (checksum!=local_file_header.crc_32)
     {
       printf("Checksums don't match: %d %d\n",checksum,local_file_header.crc_32);
       ret_code=-4;
     }
-/* } */
+  }
 
   free(local_file_header.file_name);
   free(local_file_header.extra_field);
