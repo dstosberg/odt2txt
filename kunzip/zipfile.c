@@ -189,7 +189,37 @@ int read_zip_header(FILE *in, struct zip_local_file_header_t *local_file_header)
   local_file_header->uncompressed_size=read_int(in);
   local_file_header->file_name_length=read_word(in);
   local_file_header->extra_field_length=read_word(in);
+  local_file_header->descriptor_length = 0;
 
+  /* if the 4th bit in the general_purpose_bit_flag is set,
+     crc32, compressed_size and uncompressed_size are written
+     into a data descriptor that follows the compressed
+     data */
+  if (local_file_header->general_purpose_bit_flag & 8) {
+    long data_start = ftell(in);
+    unsigned int signature;
+
+    while (1) {
+      signature = read_int(in);
+
+      if (feof(in)) {
+        fseek(in, data_start, SEEK_SET);
+        return -1;
+      }
+
+      if (signature == 0x08074b50) {
+        local_file_header->crc_32=read_int(in);
+        local_file_header->compressed_size=read_int(in);
+        local_file_header->uncompressed_size=read_int(in);
+        local_file_header->descriptor_length = 16;
+        fseek(in, data_start, SEEK_SET);
+        return 0;
+      }
+
+      fseek(in, -3, SEEK_CUR);
+    }
+
+  }
   return 0;
 }
 
@@ -403,7 +433,8 @@ int i;
 
     fseek(in,local_file_header.compressed_size+
              local_file_header.file_name_length+
-             local_file_header.extra_field_length,SEEK_CUR);
+             local_file_header.extra_field_length+
+             local_file_header.descriptor_length,SEEK_CUR);
 
     count++;
   }
@@ -520,7 +551,8 @@ long marker;
 
     fseek(in,local_file_header.compressed_size+
              local_file_header.file_name_length+
-             local_file_header.extra_field_length,SEEK_CUR);
+             local_file_header.extra_field_length+
+             local_file_header.descriptor_length,SEEK_CUR);
 
   }
 
