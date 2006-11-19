@@ -3,6 +3,8 @@
 
 #define BUF_SZ 4096
 
+static char *headline(char line, char **buf, regmatch_t matches[], size_t nmatch);
+
 #ifndef HAVE_STRLCPY
 size_t strlcpy(char *dest, const char *src, size_t size)
 {
@@ -74,15 +76,16 @@ void print_regexp_err(int reg_errno, const regex_t *rx)
 }
 
 int regex_subst(char **buf, size_t *buf_sz,
-		const char *regex, enum regex_opt regopt,
-		const char *subst)
+		const char *regex, int regopt,
+		const void *subst)
 {
 	int r;
-	int i = 0;
-	int num_matches = 0;
+	const int i = 0;
+	int match_count = 0;
 
 	regex_t rx;
-	regmatch_t matches[1];
+	const size_t nmatches = 10;
+	regmatch_t matches[nmatches];
 
 	r = regcomp(&rx, regex, REG_EXTENDED);
 	if (r) {
@@ -91,23 +94,37 @@ int regex_subst(char **buf, size_t *buf_sz,
 	}
 
 	do {
-		if(0 != regexec(&rx, *buf, 1, matches, 0))
+		if(0 != regexec(&rx, *buf, nmatches, matches, 0))
 			break;
 
 		if (matches[i].rm_so != -1) {
+			char *s;
+
+			if (regopt & _REG_EXEC) {
+				s = (*(char *(*)
+				       (char **buf, regmatch_t matches[],
+					size_t nmatch))subst)
+					(buf, matches, nmatches);
+			} else
+				s = (char*)subst;
+
 			buf_subst(buf, buf_sz,
 			      matches[i].rm_so, matches[i].rm_eo - 1,
-			      subst);
-			num_matches++;
-		}
-	} while (regopt == REG_GLOBAL);
+			      s);
+			match_count++;
 
-	regfree(&rx);
-	return num_matches;
+			if (regopt & _REG_EXEC)
+				free(s);
+		}
+	} while (regopt & _REG_GLOBAL);
+
+	/* FIXME why does this segfault (linux, glibc-2.3.2)? */
+	/* regfree(&rx); */
+	return match_count;
 }
 
 int regex_rm(char **buf, size_t *buf_sz,
-	     const char *regex, enum regex_opt regopt)
+	     const char *regex, int regopt)
 {
 	return regex_subst(buf, buf_sz, regex, regopt, "");
 }
@@ -134,5 +151,36 @@ char *underline(char linechar, const char *lenstr)
 	line[linelen - 1] = '\0';
 
 	return line;
+}
+
+static char *headline(char line, char **buf, regmatch_t matches[], size_t nmatch)
+{
+	const int i = 2;
+	char *result;
+	size_t len;
+	char *match;
+
+	printf("aaaaa\n");
+
+	len = matches[i].rm_eo - matches[i].rm_so;
+	match = malloc(len + 2);
+
+	memcpy(match, *buf + matches[i].rm_so, len);
+	match[len] = '\0' ;
+
+	result = underline(line, match);
+
+	free(match);
+	return result;
+}
+
+char *h1(char **buf, regmatch_t matches[], size_t nmatch)
+{
+	return headline('=', buf, matches, nmatch);
+}
+
+char *h2(char **buf, regmatch_t matches[], size_t nmatch)
+{
+	return headline('=', buf, matches, nmatch);
 }
 

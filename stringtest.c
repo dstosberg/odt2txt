@@ -44,11 +44,11 @@ int main(int argc, char **argv)
 	assert((!strcmp(buf, "When, do you think, can we three meet again?")));
 
 	/* success: regexp delete once */
-	assert( 1 == regex_rm(&buf, &buf_sz, "in", REG_ONCE));
+	assert( 1 == regex_rm(&buf, &buf_sz, "in", _REG_DEFAULT));
 	assert((!strcmp(buf, "When, do you thk, can we three meet again?")));
 
 	/* success: regexp delete global */
-	assert( 2 == regex_rm(&buf, &buf_sz, "ee", REG_GLOBAL));
+	assert( 2 == regex_rm(&buf, &buf_sz, "ee", _REG_GLOBAL));
 	assert((!strcmp(buf, "When, do you thk, can we thr mt again?")));
 
 
@@ -56,15 +56,15 @@ int main(int argc, char **argv)
 	buf_sz = strlen(test3) + 1;
 	buf = malloc(buf_sz);
 	memcpy(buf, test3, buf_sz);
-	assert(50 == regex_rm(&buf, &buf_sz, "do", REG_GLOBAL));
-	assert(50 == regex_rm(&buf, &buf_sz, " ", REG_GLOBAL));
+	assert(50 == regex_rm(&buf, &buf_sz, "do", _REG_GLOBAL));
+	assert(50 == regex_rm(&buf, &buf_sz, " ", _REG_GLOBAL));
 	assert(!strcmp(buf, ""));
 
 	/* simple patterns */
 	memcpy(buf, "abcd35ef8gh6i", 14);
 	buf_sz = 12;
-	assert( 1 == regex_rm(&buf, &buf_sz, "[0-9]{2}", REG_GLOBAL));
-	assert( 2 == regex_rm(&buf, &buf_sz, "[0-9]", REG_GLOBAL));
+	assert( 1 == regex_rm(&buf, &buf_sz, "[0-9]{2}", _REG_GLOBAL));
+	assert( 2 == regex_rm(&buf, &buf_sz, "[0-9]", _REG_GLOBAL));
 	assert(!strcmp(buf, "abcdefghi"));
 
 	/* underline */
