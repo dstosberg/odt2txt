@@ -41,3 +41,4 @@ char *underline(char linechar, const char *lenstr);
 char *h1(char **buf, regmatch_t matches[], size_t nmatch);
 char *h2(char **buf, regmatch_t matches[], size_t nmatch);
 
+void output(char *buf, int width);
