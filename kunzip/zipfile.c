@@ -291,7 +291,7 @@ struct tm my_tm;
   }
 
 #ifndef QUIET
-  printf("unzipping: %s\n",outname);
+  /*  printf("unzipping: %s\n",outname); */
 #endif
 
 /*  if (local_file_header.uncompressed_size!=0)

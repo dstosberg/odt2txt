@@ -1,3 +1,14 @@
+/*
+ * odt2txt.c: A simple (and stupid) converter from OpenDocument Text
+ *            to plain text.
+ *
+ * Copyright (c) 2006 Dennis Stosberg <dennis@stosberg.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License,
+ * version 2 as published by the Free Software Foundation
+ */
+
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -19,17 +30,25 @@
 
 static int opt_raw;
 static char *opt_encoding;
-static int opt_width = 65;
+static int opt_width = 63;
 static const char *opt_filename;
 
 #define BUF_SZ 4096
+
+#ifndef ICONV_CHAR
+#define ICONV_CHAR char
+#endif
+
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
 
 struct subst {
 	char *utf;
 	char *ascii;
 };
 
-void usage(void)
+static void usage(void)
 {
 	printf("Syntax:   odt2txt [options] filename\n\n"
 	       "Converts an OpenDocument Text to raw text.\n\n"
@@ -40,7 +59,7 @@ void usage(void)
 	exit(EXIT_FAILURE);
 }
 
-const char *create_tmpdir()
+static const char *create_tmpdir()
 {
 	char *dirnam;
 	char *tmpdir;
@@ -83,16 +102,17 @@ const char *create_tmpdir()
 	return(dirnam);
 }
 
-void yrealloc_buf(char **buf, char **mark, size_t len) {
+static void yrealloc_buf(char **buf, char **mark, size_t len) {
 	ptrdiff_t offset = *mark - *buf;
 	*buf = yrealloc(*buf, len);
 	*mark = *buf + offset;
 }
 
-char *conv(char *docbuf)
+static char *conv(char *docbuf)
 {
 	iconv_t ic;
-	char *doc, *out, *outbuf;
+	ICONV_CHAR *doc;
+	char *out, *outbuf;
 	size_t inleft, outleft = 0;
 	size_t conv;
 	size_t outlen = 0;
@@ -116,7 +136,7 @@ char *conv(char *docbuf)
 	}
 
 	inleft = strlen(docbuf);
-	doc = docbuf;
+	doc = (ICONV_CHAR*)docbuf;
 	outlen = alloc_step; outleft = alloc_step;
 	outbuf = ymalloc(alloc_step);
 	out = outbuf;
@@ -166,7 +186,7 @@ char *conv(char *docbuf)
 	return outbuf;
 }
 
-const char *unzip_doc(const char *filename, const char *tmpdir)
+static const char *unzip_doc(const char *filename, const char *tmpdir)
 {
 	int r;
 	char *content_file;
@@ -175,10 +195,9 @@ const char *unzip_doc(const char *filename, const char *tmpdir)
 	kunzip_inflate_init();
 	r = kunzip_get_offset_by_name((char*)filename, "content.xml", 3, -1);
 
-	printf("%d\n", r);
-
 	if(!r) {
-		fprintf(stderr, "Can't open %s: Is it an OpenDocument Text?\n", filename);
+		fprintf(stderr,
+			"Can't open %s: Is it an OpenDocument Text?\n", filename);
 		exit(EXIT_FAILURE);
 	}
 
@@ -204,7 +223,7 @@ const char *unzip_doc(const char *filename, const char *tmpdir)
 	return(content_file);
 }
 
-size_t read_doc(char **buf, const char *filename)
+static size_t read_doc(char **buf, const char *filename)
 {
 	int fd;
 	char *bufp;
@@ -226,7 +245,8 @@ size_t read_doc(char **buf, const char *filename)
 		read_sz = read(fd, bufp, BUF_SZ);
 
 		if (read_sz == -1) {
-			fprintf(stderr, "Can't read from %s: %s\n", filename, strerror(errno));
+			fprintf(stderr, "Can't read from %s: %s\n",
+				filename, strerror(errno));
 			exit(EXIT_FAILURE);
 		} else if (read_sz == 0)
 			break;
@@ -247,9 +267,9 @@ size_t read_doc(char **buf, const char *filename)
 
 #define RS_O(a,b) regex_subst(buf, buf_sz, (a), _REG_DEFAULT, (b))
 #define RS_G(a,b) regex_subst(buf, buf_sz, (a), _REG_GLOBAL, (b))
-#define RS_E(a,b) regex_subst(buf, buf_sz, (a), _REG_EXEC | _REG_GLOBAL, (b))
+#define RS_E(a,b) regex_subst(buf, buf_sz, (a), _REG_EXEC | _REG_GLOBAL, (void*)(b))
 
-void format_doc(char **buf, size_t *buf_sz)
+static void format_doc(char **buf, size_t *buf_sz)
 {
 	int i;
 
@@ -369,21 +389,27 @@ int main(int argc, const char **argv)
 
 	tmpdir = create_tmpdir();
 	docfile = unzip_doc(opt_filename, tmpdir);
-	yfree((void*)tmpdir);
-
 	doclen = read_doc(&docbuf, docfile);
+	format_doc(&docbuf, &doclen);
+	outbuf = conv(docbuf);
+	output(outbuf, opt_width);
+
+	/* clean up */
+	if(0 != unlink(docfile)) {
+		fprintf(stderr, "%s: %s",
+			docfile, strerror(errno));
+		exit(EXIT_FAILURE);
+	}
 	yfree((void*)docfile);
 
-	format_doc(&docbuf, &doclen);
-
-	outbuf = conv(docbuf);
+	if(0 != rmdir(tmpdir)) {
+		fprintf(stderr, "%s: %s",
+			tmpdir, strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+	yfree((void*)tmpdir);
 	yfree(docbuf);
-
-	output(outbuf, opt_width);
 	yfree(outbuf);
 
-	fprintf(stderr, "debug: raw: %d, encoding: %s, width: %d, file: %s, doclen: %u\n",
-		opt_raw, opt_encoding, opt_width, opt_filename, (unsigned int)doclen);
-
-	exit(EXIT_SUCCESS);
+	return EXIT_SUCCESS;
 }

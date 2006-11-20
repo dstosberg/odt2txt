@@ -1,3 +1,12 @@
+/*
+ * stringops.c: String and regex operations for odt2txt
+ *
+ * Copyright (c) 2006 Dennis Stosberg <dennis@stosberg.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License,
+ * version 2 as published by the Free Software Foundation
+ */
 
 #include "mem.h"
 #include "stringops.h"
@@ -41,7 +50,9 @@ size_t strlcat(char *dest, const char *src, size_t count)
 }
 #endif
 
-int buf_subst(char **buf, size_t *buf_sz, size_t start, size_t stop, const char *subst)
+int buf_subst(char **buf, size_t *buf_sz,
+	      size_t start, size_t stop,
+	      const char *subst)
 {
 	int len;
 	size_t subst_len;
@@ -54,13 +65,13 @@ int buf_subst(char **buf, size_t *buf_sz, size_t start, size_t stop, const char 
 
 	if (subst_len <= len) {
 		memcpy(*buf + start, subst, subst_len);
-		memmove(*buf + start + subst_len, *buf + stop + 1, (*buf_sz - stop) + 1);
+		memmove(*buf + start + subst_len, *buf + stop + 1, (*buf_sz - stop));
 	} else {
 		while (strlen(*buf) + 1 + (subst_len - len) > *buf_sz) {
 			*buf_sz += BUF_SZ;
 			*buf = yrealloc(*buf, *buf_sz);
 		}
-		memmove(*buf + start + subst_len, *buf + stop + 1, (*buf_sz - stop) + 1);
+		memmove(*buf + start + subst_len, *buf + stop + 1, (*buf_sz - stop));
 		memcpy(*buf + start, subst, subst_len);
 	}
 
@@ -120,8 +131,7 @@ int regex_subst(char **buf, size_t *buf_sz,
 		}
 	} while (regopt & _REG_GLOBAL);
 
-	/* FIXME why does this segfault (linux, glibc-2.3.2)? */
-	/* regfree(&rx); */
+	regfree(&rx);
 	return match_count;
 }
 
@@ -145,13 +155,15 @@ char *underline(char linechar, const char *lenstr)
 		return line;
 	}
 
-	line = ymalloc(linelen);
+	line = ymalloc(linelen + 3);
 	strlcpy(line, lenstr, linelen);
 	strlcat(line, "\n", linelen);
 	for (i = len + 1; i < linelen - 1; i++) {
 		line[i] = linechar;
 	}
-	line[linelen - 1] = '\0';
+	line[linelen - 1] = '\n';
+	line[linelen    ] = '\n';
+	line[linelen + 1] = '\0';
 
 	return line;
 }
@@ -207,7 +219,7 @@ void output(char *buf, int width)
 	/* FIXME: This function should take multibyte utf8-encoded
 	   characters into account for the length calculation. */
 
-	const char *lf = "\n   ";
+	const char *lf = "\n  ";
 	const size_t lflen = strlen(lf);
 	const char *bufp = buf;
 	const char *last = buf;
@@ -219,7 +231,6 @@ void output(char *buf, int width)
 		if (*bufp == ' ')
 			lastspace = bufp;
 		else if (*bufp == '\n') {
-
 			while(*last == ' ')
 				last++;
 
@@ -230,7 +241,6 @@ void output(char *buf, int width)
 		}
 
 		if (linelen >= width) {
-
 			while(*last == ' ')
 				last++;
 
@@ -243,5 +253,6 @@ void output(char *buf, int width)
 		bufp++;
 		linelen++;
 	}
+	fputs("\n", stdout);
 }
 

@@ -1,3 +1,12 @@
+/*
+ * stringops.c: String and regex operations for odt2txt
+ *
+ * Copyright (c) 2006 Dennis Stosberg <dennis@stosberg.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License,
+ * version 2 as published by the Free Software Foundation
+ */
 
 #include <regex.h>
 #include <stdio.h>
@@ -22,7 +31,9 @@ size_t strlcat(char *dest, const char *src, size_t count);
 
   Return value: 0 on success, -1 on failure
  */
-int buf_subst(char **buf, size_t *buf_sz, size_t start, size_t stop, const char *subst);
+int buf_subst(char **buf, size_t *buf_sz,
+	      size_t start, size_t stop,
+	      const char *subst);
 
 /*
   Deletes match(es) of regex from *buf.
