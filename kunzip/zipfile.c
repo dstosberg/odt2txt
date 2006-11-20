@@ -38,6 +38,8 @@ struct utimbuf
 
 int utime(char *outname, struct utimbuf *my_utimbuf);
 
+#endif
+
 char *strcasestr_m(char *hejstack, char *needle)
 {
 int hejlen,neelen;
@@ -56,7 +58,6 @@ int t,r;
   return (char *)0;
 }
 
-#endif
 
 #define BUFFER_SIZE 16738
 
@@ -269,7 +270,7 @@ struct tm my_tm;
   local_file_header.extra_field=(unsigned char *)malloc(local_file_header.extra_field_length+1);
 
   read_chars(in,local_file_header.file_name,local_file_header.file_name_length);
-  read_chars(in,local_file_header.extra_field,local_file_header.extra_field_length);
+  read_chars(in,(char*)local_file_header.extra_field,local_file_header.extra_field_length);
 
   marker=ftell(in);
 
@@ -308,7 +309,7 @@ struct tm my_tm;
     }
       else
     {
-      inflate(in, out, &checksum);
+      inflate(in, out, (unsigned int*)&checksum);
 /* printf("start=%d end=%d total=%d should_be=%d\n",marker,(int)ftell(in),(int)ftell(in)-marker,local_file_header.compressed_size); */
     }
 
@@ -541,11 +542,7 @@ long marker;
           if (strstr(name,compressed_filename)!=0) break;
         }
           else
-#ifdef DLL
         { if (strcasestr_m(name,compressed_filename)!=0) break; }
-#else
-        { if (strcasestr(compressed_filename,name)!=0) break; }
-#endif
       }
     }
 
