@@ -276,9 +276,13 @@ static void format_doc(char **buf, size_t *buf_sz)
 	struct subst non_unicode[] = {
 		/* utf-8 sequence  , ascii substitution */
 
-		{ "\xE2\x80\x9C\0" , "``" }, /* U+201C */
-		{ "\xE2\x80\x9D\0" , "''" }, /* U+201D */
-		{ "\xE2\x80\x9E\0" , ",," }, /* U+201E */
+		{ "\xE2\x80\x9C\0" , "``" }, /* U+201C left quotation mark */
+		{ "\xE2\x80\x9D\0" , "''" }, /* U+201D right quotation mark */
+		{ "\xE2\x80\x9E\0" , ",," }, /* U+201E german left quotes */
+
+		{ "\xC2\xBC\0"     , "1/4"}, /* U+00BC one quarter */
+		{ "\xC2\xBD\0"     , "1/2"}, /* U+00BD one half */
+		{ "\xC2\xBE\0"     , "3/4"}, /* U+00BE three quarters */
 
 		{ "\xE2\x80\x90\0" , "-"  }, /* U+2010 hyphen */
 		{ "\xE2\x80\x91\0" , "-"  }, /* U+2011 non-breaking hyphen */

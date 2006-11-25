@@ -2,7 +2,7 @@
 SYSTEM := $(shell uname -s)
 
 ifdef RELEASE
-CFLAGS = -O2 -DQUIET
+CFLAGS = -O2
 else
 CFLAGS = -O0 -g -Wall -DMEMDEBUG
 endif
@@ -35,7 +35,7 @@ BIN = odt2txt
 $(BIN): $(OBJ)
 	$(CC) -o $@ $(LDFLAGS) $(LIB) $(OBJ)
 
-stringtest: stringtest.o stringops.o
+stringtest: stringtest.o stringops.o mem.o
 
 $(OBJ): Makefile
 

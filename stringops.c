@@ -54,28 +54,47 @@ int buf_subst(char **buf, size_t *buf_sz,
 	      size_t start, size_t stop,
 	      const char *subst)
 {
-	int len;
+	size_t len;
 	size_t subst_len;
+	int    diff;
 
-	if (start > stop)
-		return -1;
+	if (start > stop) {
+		size_t tmp = start;
+		start = stop;
+		stop = tmp;
+	}
 
-	len = (stop - start) + 1;
+	len = stop - start;
 	subst_len = strlen(subst);
+	diff = subst_len - len;
 
-	if (subst_len <= len) {
+	if (0 > diff) {
 		memcpy(*buf + start, subst, subst_len);
-		memmove(*buf + start + subst_len, *buf + stop + 1, (*buf_sz - stop));
-	} else {
-		while (strlen(*buf) + 1 + (subst_len - len) > *buf_sz) {
+		memmove(*buf + start + subst_len, *buf + stop, *buf_sz - stop);
+
+	} else if (0 == diff) {
+		memcpy(*buf + start, subst, subst_len);
+
+	} else { /* 0 < diff */
+		int l = strlen(*buf);
+		while (l + diff + 1 > *buf_sz) {
+
+			/* safety measure: do not swap to death if
+			   the final \0 is missing. */
+			if (l >= *buf_sz) {
+				fprintf(stderr, "missing string terminator\n");
+				exit(EXIT_FAILURE);
+			}
+
 			*buf_sz += BUF_SZ;
 			*buf = yrealloc(*buf, *buf_sz);
 		}
-		memmove(*buf + start + subst_len, *buf + stop + 1, (*buf_sz - stop));
+		memmove(*buf + start + subst_len, *buf + stop,
+			(*buf_sz - stop) - diff);
 		memcpy(*buf + start, subst, subst_len);
 	}
 
-	return 0;
+	return diff;
 }
 
 void print_regexp_err(int reg_errno, const regex_t *rx)
@@ -93,6 +112,8 @@ int regex_subst(char **buf, size_t *buf_sz,
 		const void *subst)
 {
 	int r;
+	char *bufp;
+	size_t off = 0;
 	const int i = 0;
 	int match_count = 0;
 
@@ -107,11 +128,13 @@ int regex_subst(char **buf, size_t *buf_sz,
 	}
 
 	do {
-		if(0 != regexec(&rx, *buf, nmatches, matches, 0))
+		bufp = *buf + off;
+		if(0 != regexec(&rx, bufp, nmatches, matches, 0))
 			break;
 
 		if (matches[i].rm_so != -1) {
 			char *s;
+			int subst_len;
 
 			if (regopt & _REG_EXEC) {
 				s = (*(char *(*)
@@ -121,13 +144,18 @@ int regex_subst(char **buf, size_t *buf_sz,
 			} else
 				s = (char*)subst;
 
-			buf_subst(buf, buf_sz,
-			      matches[i].rm_so, matches[i].rm_eo - 1,
-			      s);
+			subst_len = buf_subst(buf, buf_sz,
+					      matches[i].rm_so + off,
+					      matches[i].rm_eo + off,
+					      s);
 			match_count++;
 
 			if (regopt & _REG_EXEC)
 				yfree(s);
+
+			off += matches[i].rm_so;
+			if (subst_len >= 0)
+				off += subst_len + 1;
 		}
 	} while (regopt & _REG_GLOBAL);
 

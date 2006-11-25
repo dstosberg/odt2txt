@@ -24,12 +24,18 @@ size_t strlcat(char *dest, const char *src, size_t count);
 
 /*
   Substitute characters in the string *buf from start to end
-  (inclusive) and replace them with *subst.
+  (inclusive) and replace them with *subst. The first character in
+  the string has the index 0.
 
   If *buf is not long enough, it is automaticall realloced and the
   value at buf_sz is set to the new buffer length.
 
-  Return value: 0 on success, -1 on failure
+  Returns the change of the length of the string contained at *buf.
+  The return value is negative, if the string is shortened, zero if
+  the length is unchanged and positive if the length increases.
+
+  If start is bigger than stop, their values are automatically
+  swapped.
  */
 int buf_subst(char **buf, size_t *buf_sz,
 	      size_t start, size_t stop,
@@ -37,6 +43,8 @@ int buf_subst(char **buf, size_t *buf_sz,
 
 /*
   Deletes match(es) of regex from *buf.
+
+  Returns the number of matches that were deleted.
  */
 int regex_rm(char **buf, size_t *buf_sz,
 	     const char *regex, int regopt);
