@@ -13,7 +13,8 @@
 
 #define BUF_SZ 4096
 
-static char *headline(char line, char **buf, regmatch_t matches[], size_t nmatch);
+static char *headline(char line, const char *buf, regmatch_t matches[],
+		      size_t nmatch, size_t off);
 static size_t charlen_utf8(const char *s);
 
 #ifndef HAVE_STRLCPY
@@ -50,53 +51,6 @@ size_t strlcat(char *dest, const char *src, size_t count)
 }
 #endif
 
-int buf_subst(char **buf, size_t *buf_sz,
-	      size_t start, size_t stop,
-	      const char *subst)
-{
-	size_t len;
-	size_t subst_len;
-	int    diff;
-
-	if (start > stop) {
-		size_t tmp = start;
-		start = stop;
-		stop = tmp;
-	}
-
-	len = stop - start;
-	subst_len = strlen(subst);
-	diff = subst_len - len;
-
-	if (0 > diff) {
-		memcpy(*buf + start, subst, subst_len);
-		memmove(*buf + start + subst_len, *buf + stop, *buf_sz - stop);
-
-	} else if (0 == diff) {
-		memcpy(*buf + start, subst, subst_len);
-
-	} else { /* 0 < diff */
-		int l = strlen(*buf);
-		while (l + diff + 1 > *buf_sz) {
-
-			/* safety measure: do not swap to death if
-			   the final \0 is missing. */
-			if (l >= *buf_sz) {
-				fprintf(stderr, "missing string terminator\n");
-				exit(EXIT_FAILURE);
-			}
-
-			*buf_sz += BUF_SZ;
-			*buf = yrealloc(*buf, *buf_sz);
-		}
-		memmove(*buf + start + subst_len, *buf + stop,
-			(*buf_sz - stop) - diff);
-		memcpy(*buf + start, subst, subst_len);
-	}
-
-	return diff;
-}
-
 void print_regexp_err(int reg_errno, const regex_t *rx)
 {
 	char *buf = ymalloc(BUF_SZ);
@@ -107,12 +61,12 @@ void print_regexp_err(int reg_errno, const regex_t *rx)
 	yfree(buf);
 }
 
-int regex_subst(char **buf, size_t *buf_sz,
+int regex_subst(STRBUF *buf,
 		const char *regex, int regopt,
 		const void *subst)
 {
 	int r;
-	char *bufp;
+	const char *bufp;
 	size_t off = 0;
 	const int i = 0;
 	int match_count = 0;
@@ -128,8 +82,12 @@ int regex_subst(char **buf, size_t *buf_sz,
 	}
 
 	do {
-		bufp = *buf + off;
-		if(0 != regexec(&rx, bufp, nmatches, matches, 0))
+		if (off > strbuf_len(buf))
+			break;
+
+		bufp = strbuf_get(buf) + off;
+
+		if (0 != regexec(&rx, bufp, nmatches, matches, 0))
 			break;
 
 		if (matches[i].rm_so != -1) {
@@ -138,16 +96,16 @@ int regex_subst(char **buf, size_t *buf_sz,
 
 			if (regopt & _REG_EXEC) {
 				s = (*(char *(*)
-				       (char **buf, regmatch_t matches[],
-					size_t nmatch))subst)
-					(buf, matches, nmatches);
+				       (const char *buf, regmatch_t matches[],
+					size_t nmatch, size_t off))subst)
+					(strbuf_get(buf), matches, nmatches, off);
 			} else
 				s = (char*)subst;
 
-			subst_len = buf_subst(buf, buf_sz,
-					      matches[i].rm_so + off,
-					      matches[i].rm_eo + off,
-					      s);
+			subst_len = strbuf_subst(buf,
+						 matches[i].rm_so + off,
+						 matches[i].rm_eo + off,
+						 s);
 			match_count++;
 
 			if (regopt & _REG_EXEC)
@@ -163,10 +121,10 @@ int regex_subst(char **buf, size_t *buf_sz,
 	return match_count;
 }
 
-int regex_rm(char **buf, size_t *buf_sz,
+int regex_rm(STRBUF *buf,
 	     const char *regex, int regopt)
 {
-	return regex_subst(buf, buf_sz, regex, regopt, "");
+	return regex_subst(buf, regex, regopt, "");
 }
 
 char *underline(char linechar, const char *lenstr)
@@ -196,7 +154,8 @@ char *underline(char linechar, const char *lenstr)
 	return line;
 }
 
-static char *headline(char line, char **buf, regmatch_t matches[], size_t nmatch)
+static char *headline(char line, const char *buf, regmatch_t matches[],
+		      size_t nmatch, size_t off)
 {
 	const int i = 1;
 	char *result;
@@ -206,7 +165,7 @@ static char *headline(char line, char **buf, regmatch_t matches[], size_t nmatch
 	len = matches[i].rm_eo - matches[i].rm_so;
 	match = ymalloc(len + 1);
 
-	memcpy(match, *buf + matches[i].rm_so, len);
+	memcpy(match, buf + matches[i].rm_so + off, len);
 	match[len] = '\0' ;
 
 	result = underline(line, match);
@@ -215,14 +174,14 @@ static char *headline(char line, char **buf, regmatch_t matches[], size_t nmatch
 	return result;
 }
 
-char *h1(char **buf, regmatch_t matches[], size_t nmatch)
+char *h1(const char *buf, regmatch_t matches[], size_t nmatch, size_t off)
 {
-	return headline('=', buf, matches, nmatch);
+	return headline('=', buf, matches, nmatch, off);
 }
 
-char *h2(char **buf, regmatch_t matches[], size_t nmatch)
+char *h2(const char *buf, regmatch_t matches[], size_t nmatch, size_t off)
 {
-	return headline('-', buf, matches, nmatch);
+	return headline('-', buf, matches, nmatch, off);
 }
 
 static size_t charlen_utf8(const char *s)
@@ -242,17 +201,20 @@ static size_t charlen_utf8(const char *s)
 	return count;
 }
 
-void output(char *buf, int width)
+void output(STRBUF *buf, int width)
 {
 	/* FIXME: This function should take multibyte utf8-encoded
 	   characters into account for the length calculation. */
 
 	const char *lf = "\n  ";
 	const size_t lflen = strlen(lf);
-	const char *bufp = buf;
-	const char *last = buf;
+	const char *bufp;
+	const char *last;
 	const char *lastspace = 0;
 	int linelen = 0;
+
+	bufp = strbuf_get(buf);
+	last = bufp;
 
 	fwrite(lf, lflen, 1, stdout);
 	while (*bufp) {

@@ -40,10 +40,6 @@ static const char *opt_filename;
 #define ICONV_CHAR char
 #endif
 
-#ifndef PATH_MAX
-#define PATH_MAX 4096
-#endif
-
 struct subst {
 	char *utf;
 	char *ascii;
@@ -109,8 +105,9 @@ static void yrealloc_buf(char **buf, char **mark, size_t len) {
 	*mark = *buf + offset;
 }
 
-static char *conv(char *docbuf)
+static STRBUF *conv(STRBUF *buf)
 {
+	/* FIXME: This functionality belongs into strbuf.c */
 	iconv_t ic;
 	ICONV_CHAR *doc;
 	char *out, *outbuf;
@@ -118,6 +115,7 @@ static char *conv(char *docbuf)
 	size_t conv;
 	size_t outlen = 0;
 	const size_t alloc_step = 4096;
+	STRBUF *output;
 
 	char *input_enc = "utf-8";
 	ic = iconv_open(opt_encoding, input_enc);
@@ -136,8 +134,8 @@ static char *conv(char *docbuf)
 		}
 	}
 
-	inleft = strlen(docbuf);
-	doc = (ICONV_CHAR*)docbuf;
+	inleft = strbuf_len(buf);
+	doc = (ICONV_CHAR*)strbuf_get(buf);
 	outlen = alloc_step; outleft = alloc_step;
 	outbuf = ymalloc(alloc_step);
 	out = outbuf;
@@ -184,7 +182,8 @@ static char *conv(char *docbuf)
 		exit(EXIT_FAILURE);
 	}
 
-	return outbuf;
+	output = strbuf_create_slurp_n(outbuf, (size_t)(out - outbuf));
+	return output;
 }
 
 static const char *unzip_doc(const char *filename, const char *tmpdir)
@@ -224,15 +223,17 @@ static const char *unzip_doc(const char *filename, const char *tmpdir)
 	return(content_file);
 }
 
-static size_t read_doc(char **buf, const char *filename)
+static STRBUF *read_doc(const char *filename)
 {
 	int fd;
-	char *bufp;
+	STRBUF *sbuf;
 	size_t fpos = 0;
+	char *buf;
+	char *bufp;
 	size_t buf_sz = BUF_SZ;
 
-	*buf  = ymalloc(buf_sz);
-	bufp = *buf;
+	buf  = ymalloc(buf_sz);
+	bufp = buf;
 
 	fd = open(filename, O_RDONLY);
 	if (fd == -1) {
@@ -256,52 +257,54 @@ static size_t read_doc(char **buf, const char *filename)
 
 		if ((int)buf_sz - (int)fpos < BUF_SZ) {
 			buf_sz += BUF_SZ;
-			*buf = yrealloc(*buf, buf_sz);
+			buf = yrealloc(buf, buf_sz);
 		}
 
-		bufp = *buf + fpos;
+		bufp = buf + fpos;
 	}
 
 	close(fd);
-	return(buf_sz);
+
+	sbuf = strbuf_create_slurp_n(buf, fpos);
+	return sbuf;
 }
 
-#define RS_O(a,b) regex_subst(buf, buf_sz, (a), _REG_DEFAULT, (b))
-#define RS_G(a,b) regex_subst(buf, buf_sz, (a), _REG_GLOBAL, (b))
-#define RS_E(a,b) regex_subst(buf, buf_sz, (a), _REG_EXEC | _REG_GLOBAL, (void*)(b))
+#define RS_O(a,b) regex_subst(buf, (a), _REG_DEFAULT, (b))
+#define RS_G(a,b) regex_subst(buf, (a), _REG_GLOBAL, (b))
+#define RS_E(a,b) regex_subst(buf, (a), _REG_EXEC | _REG_GLOBAL, (void*)(b))
 
-static void format_doc(char **buf, size_t *buf_sz)
+static void format_doc(STRBUF *buf)
 {
 	int i;
 
 	struct subst non_unicode[] = {
 		/* utf-8 sequence  , ascii substitution */
 
-		{ "\xE2\x80\x9C\0" , "``" }, /* U+201C left quotation mark */
-		{ "\xE2\x80\x9D\0" , "''" }, /* U+201D right quotation mark */
-		{ "\xE2\x80\x9E\0" , ",," }, /* U+201E german left quotes */
+		{ "\xE2\x80\x9C" , "``" }, /* U+201C left quotation mark */
+		{ "\xE2\x80\x9D" , "''" }, /* U+201D right quotation mark */
+		{ "\xE2\x80\x9E" , ",," }, /* U+201E german left quotes */
 
-		{ "\xC2\xBC\0"     , "1/4"}, /* U+00BC one quarter */
-		{ "\xC2\xBD\0"     , "1/2"}, /* U+00BD one half */
-		{ "\xC2\xBE\0"     , "3/4"}, /* U+00BE three quarters */
+		{ "\xC2\xBC"     , "1/4"}, /* U+00BC one quarter */
+		{ "\xC2\xBD"     , "1/2"}, /* U+00BD one half */
+		{ "\xC2\xBE"     , "3/4"}, /* U+00BE three quarters */
 
-		{ "\xE2\x80\x90\0" , "-"  }, /* U+2010 hyphen */
-		{ "\xE2\x80\x91\0" , "-"  }, /* U+2011 non-breaking hyphen */
-		{ "\xE2\x80\x92\0" , "-"  }, /* U+2012 figure dash */
-		{ "\xE2\x80\x93\0" , "-"  }, /* U+2013 en dash */
-		{ "\xE2\x80\x94\0" , "--" }, /* U+2014 em dash */
-		{ "\xE2\x80\x95\0" , "--" }, /* U+2015 quotation dash */
+		{ "\xE2\x80\x90" , "-"  }, /* U+2010 hyphen */
+		{ "\xE2\x80\x91" , "-"  }, /* U+2011 non-breaking hyphen */
+		{ "\xE2\x80\x92" , "-"  }, /* U+2012 figure dash */
+		{ "\xE2\x80\x93" , "-"  }, /* U+2013 en dash */
+		{ "\xE2\x80\x94" , "--" }, /* U+2014 em dash */
+		{ "\xE2\x80\x95" , "--" }, /* U+2015 quotation dash */
 
-		{ "\xE2\x80\xA2\0" , "o"  }, /* U+2022 bullet */
+		{ "\xE2\x80\xA2" , "o"  }, /* U+2022 bullet */
 
-		{ "\xE2\x80\xA5\0" , ".." }, /* U+2025 double dot */
-		{ "\xE2\x80\xA5\0" , "..."}, /* U+2026 ellipsis */
+		{ "\xE2\x80\xA5" , ".." }, /* U+2025 double dot */
+		{ "\xE2\x80\xA5" , "..."}, /* U+2026 ellipsis */
 
-		{ "\xE2\x86\x90\0" , "<-" }, /* U+2190 left arrow */
-		{ "\xE2\x86\x92\0" , "->" }, /* U+2192 right arrow */
-		{ "\xE2\x86\x94\0" , "<->"}, /* U+2190 left right arrow */
+		{ "\xE2\x86\x90" , "<-" }, /* U+2190 left arrow */
+		{ "\xE2\x86\x92" , "->" }, /* U+2192 right arrow */
+		{ "\xE2\x86\x94" , "<->"}, /* U+2190 left right arrow */
 
-		{ "\xE2\x82\xAC\0" , "EUR"}, /* U+20AC euro currency symbol */
+		{ "\xE2\x82\xAC" , "EUR"}, /* U+20AC euro currency symbol */
 
 		{ NULL, NULL },
 	};
@@ -316,9 +319,9 @@ static void format_doc(char **buf, size_t *buf_sz)
 		i++;
 	}
 
-	RS_G("\xEF\x82\xAB\0", "<->"); /* Arrows, symbol font */
-	RS_G("\xEF\x82\xAC\0", "<-" );
-	RS_G("\xEF\x82\xAE\0", "->" );
+	RS_G("\xEF\x82\xAB", "<->"); /* Arrows, symbol font */
+	RS_G("\xEF\x82\xAC", "<-" );
+	RS_G("\xEF\x82\xAE", "->" );
 
 	RS_G("&apos;", "'");           /* common entities */
 	RS_G("&amp;",  "&");
@@ -345,8 +348,8 @@ int main(int argc, const char **argv)
 	struct stat st;
 	const char *tmpdir;
 	const char *docfile;
-	size_t doclen;
-	char *docbuf, *outbuf;
+	STRBUF *docbuf;
+	STRBUF *outbuf;
 	int i = 1;
 
 	setlocale(LC_ALL, "");
@@ -394,8 +397,9 @@ int main(int argc, const char **argv)
 
 	tmpdir = create_tmpdir();
 	docfile = unzip_doc(opt_filename, tmpdir);
-	doclen = read_doc(&docbuf, docfile);
-	format_doc(&docbuf, &doclen);
+
+	docbuf = read_doc(docfile);
+	format_doc(docbuf);
 	outbuf = conv(docbuf);
 	output(outbuf, opt_width);
 
@@ -413,8 +417,8 @@ int main(int argc, const char **argv)
 		exit(EXIT_FAILURE);
 	}
 	yfree((void*)tmpdir);
-	yfree(docbuf);
-	yfree(outbuf);
+	strbuf_free(docbuf);
+	strbuf_free(outbuf);
 
 	return EXIT_SUCCESS;
 }

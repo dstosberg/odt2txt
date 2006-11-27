@@ -13,6 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "strbuf.h"
+
 #define _REG_DEFAULT  0  /* Stop after first match, to be removed */
 #define _REG_GLOBAL   1  /* Find all matches of regexp */
 #define _REG_EXEC     2  /* subst is a function pointer */
@@ -23,41 +25,22 @@ size_t strlcat(char *dest, const char *src, size_t count);
 #endif
 
 /*
-  Substitute characters in the string *buf from start to end
-  (inclusive) and replace them with *subst. The first character in
-  the string has the index 0.
-
-  If *buf is not long enough, it is automaticall realloced and the
-  value at buf_sz is set to the new buffer length.
-
-  Returns the change of the length of the string contained at *buf.
-  The return value is negative, if the string is shortened, zero if
-  the length is unchanged and positive if the length increases.
-
-  If start is bigger than stop, their values are automatically
-  swapped.
- */
-int buf_subst(char **buf, size_t *buf_sz,
-	      size_t start, size_t stop,
-	      const char *subst);
-
-/*
   Deletes match(es) of regex from *buf.
 
   Returns the number of matches that were deleted.
  */
-int regex_rm(char **buf, size_t *buf_sz,
+int regex_rm(STRBUF *buf,
 	     const char *regex, int regopt);
 
 /*
   Replaces match(es) of regex from *buf with subst.
  */
-int regex_subst(char **buf, size_t *buf_sz,
+int regex_subst(STRBUF *buf,
 		const char *regex, int regopt,
 		const void *subst);
 
 char *underline(char linechar, const char *lenstr);
-char *h1(char **buf, regmatch_t matches[], size_t nmatch);
-char *h2(char **buf, regmatch_t matches[], size_t nmatch);
+char *h1(const char *buf, regmatch_t matches[], size_t nmatch, size_t off);
+char *h2(const char *buf, regmatch_t matches[], size_t nmatch, size_t off);
 
-void output(char *buf, int width);
+void output(STRBUF *buf, int width);

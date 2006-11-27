@@ -8,6 +8,9 @@
  * version 2 as published by the Free Software Foundation
  */
 
+#ifndef STRBUF_H
+#define STRBUF_H
+
 #include "mem.h"
 
 typedef struct strbuf {
@@ -58,6 +61,12 @@ size_t strbuf_len(STRBUF *buf);
 void strbuf_shrink(STRBUF *buf);
 
 /*
+ * Creates a string buffer from a *char without copying
+ */
+STRBUF *strbuf_create_slurp(char *str);
+STRBUF *strbuf_create_slurp_n(char *str, size_t len);
+
+/*
  * Substitute characters in the string buffer buf from start
  * (inclusive) to end (exclusive) and replace them with *subst. The
  * first character in the string has the index 0.
@@ -72,3 +81,4 @@ void strbuf_shrink(STRBUF *buf);
 int strbuf_subst(STRBUF *buf, size_t start, size_t stop,
 	      const char *subst);
 
+#endif /* STRBUF_H */

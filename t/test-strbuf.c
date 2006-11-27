@@ -18,6 +18,7 @@ int main(int argc, char **argv)
 		"do do do do do do do do do do "
 		"do do do do do do do do do do "
 		"do do do do do do do do do do ";
+	char *c;
 
 	/* trivial */
 	buf = strbuf_new();
@@ -68,8 +69,15 @@ int main(int argc, char **argv)
 	/* insert a string */
 	assert( strlen(test3) == strbuf_subst(buf, 0, 0, test3));
 	assert(!strcmp(test3, strbuf_get(buf)));
-
 	strbuf_free(buf);
+
+	/* slurp */
+	c = ymalloc(strlen(test2) + 1);
+	memcpy(c, test2, strlen(test2) + 1);
+	buf = strbuf_create_slurp(c);
+	assert(!strcmp(test2, strbuf_get(buf)));
+	strbuf_free(buf);
+
 	printf("ALL HAPPY\n");
 	return(EXIT_SUCCESS);
 }

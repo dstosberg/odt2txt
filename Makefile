@@ -5,6 +5,7 @@ ifdef RELEASE
 CFLAGS = -O2
 else
 CFLAGS = -O0 -g -Wall -DMEMDEBUG -DSTRBUF_CHECK
+#LDFLAGS = -lefence
 endif
 
 ifeq ($(SYSTEM),FreeBSD)
@@ -30,15 +31,15 @@ endif
 
 KUNZIP_OBJS = kunzip/fileio.o kunzip/zipfile.o kunzip/kinflate.o
 OBJ = odt2txt.o regex.o mem.o strbuf.o $(KUNZIP_OBJS)
-TEST_OBJ = t/test-strbuf.o
+TEST_OBJ = t/test-strbuf.o t/test-regex.o
 ALL_OBJ = $(OBJ) $(TEST_OBJ)
 BIN = odt2txt
 
 $(BIN): $(OBJ)
 	$(CC) -o $@ $(LDFLAGS) $(LIB) $(OBJ)
 
-stringtest: stringtest.o regex.o mem.o
-t/test-strbuf: t/test-strbuf.o mem.o strbuf.o
+t/test-strbuf: t/test-strbuf.o strbuf.o mem.o
+t/test-regex: t/test-regex.o regex.o strbuf.o mem.o
 
 $(ALL_OBJ): Makefile
 

@@ -163,3 +163,20 @@ static void strbuf_grow(STRBUF *buf)
 
 	strbuf_check(buf);
 }
+
+STRBUF *strbuf_create_slurp(char *str)
+{
+	return strbuf_create_slurp_n(str, strlen(str));
+}
+
+STRBUF *strbuf_create_slurp_n(char *str, size_t len)
+{
+	STRBUF *buf = ymalloc(sizeof(STRBUF));
+	buf->len = len;
+	buf->buf_sz = len + 1;
+	buf->data = yrealloc(str, buf->buf_sz);
+	*(buf->data + len) = '\0';
+
+	strbuf_check(buf);
+	return buf;
+}
