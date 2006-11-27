@@ -4,7 +4,7 @@ SYSTEM := $(shell uname -s)
 ifdef RELEASE
 CFLAGS = -O2
 else
-CFLAGS = -O0 -g -Wall -DMEMDEBUG
+CFLAGS = -O0 -g -Wall -DMEMDEBUG -DSTRBUF_CHECK
 endif
 
 ifeq ($(SYSTEM),FreeBSD)
@@ -29,15 +29,18 @@ ifeq ($(SYSTEM),SunOS)
 endif
 
 KUNZIP_OBJS = kunzip/fileio.o kunzip/zipfile.o kunzip/kinflate.o
-OBJ = odt2txt.o stringops.o mem.o $(KUNZIP_OBJS)
+OBJ = odt2txt.o regex.o mem.o strbuf.o $(KUNZIP_OBJS)
+TEST_OBJ = t/test-strbuf.o
+ALL_OBJ = $(OBJ) $(TEST_OBJ)
 BIN = odt2txt
 
 $(BIN): $(OBJ)
 	$(CC) -o $@ $(LDFLAGS) $(LIB) $(OBJ)
 
-stringtest: stringtest.o stringops.o mem.o
+stringtest: stringtest.o regex.o mem.o
+t/test-strbuf: t/test-strbuf.o mem.o strbuf.o
 
-$(OBJ): Makefile
+$(ALL_OBJ): Makefile
 
 all: $(BIN)
 

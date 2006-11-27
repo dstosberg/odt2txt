@@ -10,6 +10,7 @@
 
 #include "mem.h"
 
+#ifdef MEMDEBUG
 static void    meminfo_add(void *p, size_t size, const char *file, int line);
 static void    meminfo_rm(void *p, const char *file, int line);
 static MEMINFO *meminfo_getinfo(void *p);
@@ -279,4 +280,4 @@ static void die(const char *format, ...) {
 	exit(EXIT_FAILURE);
 }
 
-
+#endif

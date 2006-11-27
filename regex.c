@@ -9,7 +9,7 @@
  */
 
 #include "mem.h"
-#include "stringops.h"
+#include "regex.h"
 
 #define BUF_SZ 4096
 

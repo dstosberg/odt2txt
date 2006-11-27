@@ -25,7 +25,8 @@
 #include <unistd.h>
 
 #include "mem.h"
-#include "stringops.h"
+#include "regex.h"
+#include "strbuf.h"
 #include "kunzip/kunzip.h"
 
 static int opt_raw;
