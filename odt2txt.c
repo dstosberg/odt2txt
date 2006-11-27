@@ -399,7 +399,10 @@ int main(int argc, const char **argv)
 	docfile = unzip_doc(opt_filename, tmpdir);
 
 	docbuf = read_doc(docfile);
-	format_doc(docbuf);
+
+	if (!opt_raw)
+		format_doc(docbuf);
+
 	outbuf = conv(docbuf);
 	output(outbuf, opt_width);
 
