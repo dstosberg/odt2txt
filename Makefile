@@ -9,12 +9,12 @@ CFLAGS = -O0 -g -Wall -DMEMDEBUG -DSTRBUF_CHECK
 endif
 
 ifeq ($(SYSTEM),FreeBSD)
-	CFLAGS += -DHAVE_STRLCPY -DICONV_CHAR="const char" -I/usr/local/include
+	CFLAGS += -DICONV_CHAR="const char" -I/usr/local/include
 	LDFLAGS += -L/usr/local/lib
 	LIB += -liconv
 endif
 ifeq ($(SYSTEM),OpenBSD)
-	CFLAGS += -DHAVE_STRLCPY -DICONV_CHAR="const char" -I/usr/local/include
+	CFLAGS += -DICONV_CHAR="const char" -I/usr/local/include
 	LDFLAGS += -L/usr/local/lib
 	LIB += -liconv
 endif
@@ -26,7 +26,7 @@ ifeq ($(SYSTEM),SunOS)
 			CFLAGS = -DMEMDEBUG -v -g
 		endif
 	endif
-	CFLAGS += -DHAVE_STRLCPY -DICONV_CHAR="const char"
+	CFLAGS += -DICONV_CHAR="const char"
 endif
 
 KUNZIP_OBJS = kunzip/fileio.o kunzip/zipfile.o kunzip/kinflate.o

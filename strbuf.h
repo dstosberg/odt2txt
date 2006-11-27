@@ -67,6 +67,11 @@ STRBUF *strbuf_create_slurp(char *str);
 STRBUF *strbuf_create_slurp_n(char *str, size_t len);
 
 /*
+ * Returns the contained string and destroys the string buffer
+ */
+char *strbuf_spit(STRBUF *buf);
+
+/*
  * Substitute characters in the string buffer buf from start
  * (inclusive) to end (exclusive) and replace them with *subst. The
  * first character in the string has the index 0.

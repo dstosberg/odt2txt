@@ -180,3 +180,16 @@ STRBUF *strbuf_create_slurp_n(char *str, size_t len)
 	strbuf_check(buf);
 	return buf;
 }
+
+char *strbuf_spit(STRBUF *buf)
+{
+	char *data;
+
+	strbuf_check(buf);
+
+	strbuf_shrink(buf);
+	data = buf->data;
+	yfree(buf);
+
+	return data;
+}

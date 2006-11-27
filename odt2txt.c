@@ -56,13 +56,12 @@ static void usage(void)
 	exit(EXIT_FAILURE);
 }
 
-static const char *create_tmpdir()
+static STRBUF *create_tmpdir()
 {
-	char *dirnam;
+	STRBUF *dirnam;
 	char *tmpdir;
 	char *pid;
 	size_t pidlen;
-	size_t left = PATH_MAX;
 	int r;
 
 	pid = ymalloc(20);
@@ -76,23 +75,17 @@ static const char *create_tmpdir()
 	if (!tmpdir)
 		tmpdir = "/tmp";
 
-	dirnam = ymalloc(left);
-	*dirnam = '\0';
-	strlcat(dirnam, tmpdir, left);
-	strlcat(dirnam, "/", left);
-	strlcat(dirnam, "odt2txt-", left);
-	strlcat(dirnam, pid, left);
+	dirnam = strbuf_new();
+	strbuf_append(dirnam, tmpdir);
+	strbuf_append(dirnam, "/odt2txt-");
+	strbuf_append(dirnam, pid);
+	strbuf_append(dirnam, "/");
 	yfree(pid);
-	left = strlcat(dirnam, "/", left);
 
-	if (left >= PATH_MAX) {
-		fprintf(stderr, "path too long");
-		exit(1);
-	}
-
-	r = mkdir(dirnam, S_IRWXU);
+	r = mkdir(strbuf_get(dirnam), S_IRWXU);
 	if (r != 0) {
-		fprintf(stderr, "Cannot create %s: %s", dirnam, strerror(errno));
+		fprintf(stderr, "Cannot create %s: %s",
+			strbuf_get(dirnam), strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
@@ -186,10 +179,10 @@ static STRBUF *conv(STRBUF *buf)
 	return output;
 }
 
-static const char *unzip_doc(const char *filename, const char *tmpdir)
+static STRBUF *unzip_doc(const char *filename, STRBUF *tmpdir)
 {
 	int r;
-	char *content_file;
+	STRBUF *content_file;
 	struct stat st;
 
 	kunzip_inflate_init();
@@ -201,29 +194,23 @@ static const char *unzip_doc(const char *filename, const char *tmpdir)
 		exit(EXIT_FAILURE);
 	}
 
-	r = kunzip_next((char*)filename, (char*)tmpdir, r);
+	r = kunzip_next((char*)filename, (char*)strbuf_get(tmpdir), r);
 	kunzip_inflate_free();
 
-	content_file = ymalloc(PATH_MAX);
-	*content_file = '\0';
-	strlcpy(content_file, tmpdir, PATH_MAX);
-	r = strlcat(content_file, "content.xml", PATH_MAX);
+	content_file = strbuf_new();
+	strbuf_append(content_file, strbuf_get(tmpdir));
+	strbuf_append(content_file, "content.xml");
 
-	if (r >= PATH_MAX) {
-		fprintf(stderr, "unzip_doc: name too long\n");
-		exit(EXIT_FAILURE);
-	}
-
-	if (0 != stat(content_file, &st)) {
+	if (0 != stat(strbuf_get(content_file), &st)) {
 		fprintf(stderr, "Unzipping file failed. %s does not exist: %s\n",
-			content_file, strerror(errno));
+			strbuf_get(content_file), strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
-	return(content_file);
+	 return content_file;
 }
 
-static STRBUF *read_doc(const char *filename)
+static STRBUF *read_doc(STRBUF *filename)
 {
 	int fd;
 	STRBUF *sbuf;
@@ -235,9 +222,10 @@ static STRBUF *read_doc(const char *filename)
 	buf  = ymalloc(buf_sz);
 	bufp = buf;
 
-	fd = open(filename, O_RDONLY);
+	fd = open(strbuf_get(filename), O_RDONLY);
 	if (fd == -1) {
-		fprintf(stderr, "Can't open %s: %s\n", filename, strerror(errno));
+		fprintf(stderr, "Can't open %s: %s\n",
+			strbuf_get(filename), strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
@@ -248,7 +236,7 @@ static STRBUF *read_doc(const char *filename)
 
 		if (read_sz == -1) {
 			fprintf(stderr, "Can't read from %s: %s\n",
-				filename, strerror(errno));
+				strbuf_get(filename), strerror(errno));
 			exit(EXIT_FAILURE);
 		} else if (read_sz == 0)
 			break;
@@ -346,8 +334,8 @@ static void format_doc(STRBUF *buf)
 int main(int argc, const char **argv)
 {
 	struct stat st;
-	const char *tmpdir;
-	const char *docfile;
+	STRBUF *tmpdir;
+	STRBUF *docfile;
 	STRBUF *docbuf;
 	STRBUF *outbuf;
 	int i = 1;
@@ -361,7 +349,7 @@ int main(int argc, const char **argv)
 		} else if (!strncmp(argv[i], "--encoding=", 11)) {
 			size_t arglen = strlen(argv[i]) - 10;
 			opt_encoding = ymalloc(arglen);
-			strlcpy(opt_encoding, argv[i] + 11, arglen);
+			memcpy(opt_encoding, argv[i] + 11, arglen + 1);
 			i++; continue;
 		} else if (!strncmp(argv[i], "--width=", 8)) {
 			opt_width = atoi(argv[i] + 8);
@@ -407,19 +395,19 @@ int main(int argc, const char **argv)
 	output(outbuf, opt_width);
 
 	/* clean up */
-	if(0 != unlink(docfile)) {
+	if(0 != unlink(strbuf_get(docfile))) {
 		fprintf(stderr, "%s: %s",
-			docfile, strerror(errno));
+			strbuf_get(docfile), strerror(errno));
 		exit(EXIT_FAILURE);
 	}
-	yfree((void*)docfile);
+	strbuf_free(docfile);
 
-	if(0 != rmdir(tmpdir)) {
+	if(0 != rmdir(strbuf_get(tmpdir))) {
 		fprintf(stderr, "%s: %s",
-			tmpdir, strerror(errno));
+			strbuf_get(tmpdir), strerror(errno));
 		exit(EXIT_FAILURE);
 	}
-	yfree((void*)tmpdir);
+	strbuf_free(tmpdir);
 	strbuf_free(docbuf);
 	strbuf_free(outbuf);
 

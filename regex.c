@@ -17,40 +17,6 @@ static char *headline(char line, const char *buf, regmatch_t matches[],
 		      size_t nmatch, size_t off);
 static size_t charlen_utf8(const char *s);
 
-#ifndef HAVE_STRLCPY
-size_t strlcpy(char *dest, const char *src, size_t size)
-{
-        size_t ret = strlen(src);
-
-        if (size) {
-                size_t len = (ret >= size) ? size - 1 : ret;
-                memcpy(dest, src, len);
-                dest[len] = '\0';
-        }
-        return ret;
-}
-
-size_t strlcat(char *dest, const char *src, size_t count)
-{
-	size_t dsize = strlen(dest);
-	size_t len = strlen(src);
-	size_t res = dsize + len;
-
-	if (dsize >= count) {
-		fprintf(stderr, "strlcat: destination string not terminated?");
-		exit(EXIT_FAILURE);
-	}
-
-	dest += dsize;
-	count -= dsize;
-	if (len >= count)
-		len = count-1;
-	memcpy(dest, src, len);
-	dest[len] = 0;
-	return res;
-}
-#endif
-
 void print_regexp_err(int reg_errno, const regex_t *rx)
 {
 	char *buf = ymalloc(BUF_SZ);
@@ -130,28 +96,29 @@ int regex_rm(STRBUF *buf,
 char *underline(char linechar, const char *lenstr)
 {
 	int i;
-	char *line;
-	size_t len = strlen(lenstr);
+	char *tmp;
+	STRBUF *line;
 	size_t charlen = charlen_utf8(lenstr);
-	size_t linelen = len + charlen + 2;
 
-	if (!len) {
-		line = ymalloc(1);
-		line[0] = '\0';
-		return line;
+	if (lenstr[0] == '\0') {
+		tmp = ymalloc(1);
+		tmp[0] = '\0';
+		return tmp;
 	}
 
-	line = ymalloc(linelen + 3);
-	strlcpy(line, lenstr, linelen);
-	strlcat(line, "\n", linelen);
-	for (i = len + 1; i < linelen - 1; i++) {
-		line[i] = linechar;
-	}
-	line[linelen - 1] = '\n';
-	line[linelen    ] = '\n';
-	line[linelen + 1] = '\0';
+	line = strbuf_new();
+	strbuf_append(line, lenstr);
+	strbuf_append(line, "\n");
 
-	return line;
+	tmp = ymalloc(charlen);
+	for (i = 0; i < charlen; i++) {
+		tmp[i] = linechar;
+	}
+	strbuf_append_n(line, tmp, charlen);
+	yfree(tmp);
+
+	strbuf_append(line, "\n\n");
+	return strbuf_spit(line);
 }
 
 static char *headline(char line, const char *buf, regmatch_t matches[],
