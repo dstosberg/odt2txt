@@ -5,13 +5,9 @@
 
 This code is Copyright 2005-2006 by Michael Kohn
 
-This package is licensed under the LGPL. You are free to use this library
-in both commercial and non-commercial applications as long as you dynamically
-link to it. If you statically link this library you must also release your
-software under the LGPL. If you need more flexibility in the license email
-me and we can work something out. 
-
-Michael Kohn <mike@mikekohn.net>
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License,
+version 2 as published by the Free Software Foundation
 
 */
 
