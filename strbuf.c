@@ -164,12 +164,12 @@ static void strbuf_grow(STRBUF *buf)
 	strbuf_check(buf);
 }
 
-STRBUF *strbuf_create_slurp(char *str)
+STRBUF *strbuf_slurp(char *str)
 {
-	return strbuf_create_slurp_n(str, strlen(str));
+	return strbuf_slurp_n(str, strlen(str));
 }
 
-STRBUF *strbuf_create_slurp_n(char *str, size_t len)
+STRBUF *strbuf_slurp_n(char *str, size_t len)
 {
 	STRBUF *buf = ymalloc(sizeof(STRBUF));
 	buf->len = len;

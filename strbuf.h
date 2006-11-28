@@ -20,37 +20,36 @@ typedef struct strbuf {
 } STRBUF;
 
 /*
- * Initialize a new string buffer.  There is currently no other way to
- * get a new one.
+ * Initialize a new empty string buffer.
  */
 STRBUF *strbuf_new();
 
 /*
- * Free a string buffer
+ * Free a string buffer.
  */
 void strbuf_free(STRBUF *buf);
 
 /*
- * Appends the n first characters from str to the string buffer
+ * Appends the n first characters from str to the string buffer.
  *
  * Returns the new length of the string buffer.
  */
 size_t strbuf_append_n(STRBUF *buf, const char *str, size_t n);
 
 /*
- * Appends str to the strin buffer
+ * Appends str to the string buffer.
  *
- * Returns the new length of the string buffer
+ * Returns the new length of the string buffer.
  */
 size_t strbuf_append(STRBUF *buf, const char *str);
 
 /*
- * Returns a pointer to the contained string
+ * Returns a pointer to the contained string.
  */
 const char *strbuf_get(STRBUF *buf);
 
 /*
- * Returns the length of the contained string
+ * Returns the length of the contained string.
  */
 size_t strbuf_len(STRBUF *buf);
 
@@ -61,13 +60,13 @@ size_t strbuf_len(STRBUF *buf);
 void strbuf_shrink(STRBUF *buf);
 
 /*
- * Creates a string buffer from a *char without copying
+ * Creates a string buffer from a *char without copying.
  */
-STRBUF *strbuf_create_slurp(char *str);
-STRBUF *strbuf_create_slurp_n(char *str, size_t len);
+STRBUF *strbuf_slurp(char *str);
+STRBUF *strbuf_slurp_n(char *str, size_t len);
 
 /*
- * Returns the contained string and destroys the string buffer
+ * Returns the contained string and destroys the string buffer.
  */
 char *strbuf_spit(STRBUF *buf);
 

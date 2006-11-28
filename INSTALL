@@ -20,7 +20,7 @@ FreeBSD/OpenBSD:
 	on my FreeBSD system (5.3, i386)
 
 NetBSD:
-	NetBSD > 2.0 comes with an iconv implementation, do it should have
+	NetBSD > 2.0 comes with an iconv implementation, so it should have
 	everything you need.  Not tested, though.
 
 Windows (Cygwin):
@@ -35,7 +35,7 @@ Windows (mingw32):
 	similar way.
 
 	Install mingw32, mingw32-binutils and mingw32-runtime.  Download and
-	untar GNU libiconv, configure and build and install it.
+	untar GNU libiconv, configure and build and install it:
 
 	$ ./configure --host=i586-mingw32msvc --prefix=/usr/i586-mingw32msvc/
 	$ make
@@ -50,8 +50,9 @@ Windows (mingw32):
 
 	$ make CC=i586-mingw32msvc-gcc MINGW32=1 REGEX_DIR=/tmp/regex-0.12
 
-	The result should be a odt2txt.exe.  The only dependency is the file
-	libiconv-2.dll which was built from your iconv source dir.
+	The result should be a file named odt2txt.exe.  The only dependency
+	is the file libiconv-2.dll which was built from your iconv source
+	directory.
 
 	You can also link statically against libiconv if you add
 	STATIC=1 ICONV_DIR=<your_iconv_dir> to the make command line.

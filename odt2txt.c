@@ -15,11 +15,13 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <iconv.h>
-#ifndef WIN32
-#include <langinfo.h>
+
+#ifdef WIN32
+#  include <windows.h>
 #else
-#include <windows.h>
+#  include <langinfo.h>
 #endif
+
 #include <limits.h>
 #include <locale.h>
 #include <stddef.h>
@@ -145,7 +147,7 @@ static STRBUF *conv(STRBUF *buf)
 		exit(EXIT_FAILURE);
 	}
 
-	output = strbuf_create_slurp_n(outbuf, (size_t)(out - outbuf));
+	output = strbuf_slurp_n(outbuf, (size_t)(out - outbuf));
 	return output;
 }
 

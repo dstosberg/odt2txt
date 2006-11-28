@@ -1,5 +1,5 @@
 /*
- * stringops.c: String and regex operations for odt2txt
+ * regex.c: String and regex operations for odt2txt
  *
  * Copyright (c) 2006 Dennis Stosberg <dennis@stosberg.net>
  *
@@ -93,21 +93,21 @@ int regex_rm(STRBUF *buf,
 	return regex_subst(buf, regex, regopt, "");
 }
 
-char *underline(char linechar, const char *lenstr)
+char *underline(char linechar, const char *str)
 {
 	int i;
 	char *tmp;
 	STRBUF *line;
-	size_t charlen = charlen_utf8(lenstr);
+	size_t charlen = charlen_utf8(str);
 
-	if (lenstr[0] == '\0') {
+	if (str[0] == '\0') {
 		tmp = ymalloc(1);
 		tmp[0] = '\0';
 		return tmp;
 	}
 
 	line = strbuf_new();
-	strbuf_append(line, lenstr);
+	strbuf_append(line, str);
 	strbuf_append(line, "\n");
 
 	tmp = ymalloc(charlen);
