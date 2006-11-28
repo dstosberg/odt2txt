@@ -24,6 +24,9 @@ ifeq ($(UNAME_S),OpenBSD)
 	LDFLAGS += -L/usr/local/lib
 	LIBS += -liconv
 endif
+ifeq ($(UNAME_S),NetBSD)
+	CFLAGS += -DICONV_CHAR="const char"
+endif
 ifeq ($(UNAME_S),SunOS)
 	ifeq ($(CC),cc)
 		ifdef RELEASE
@@ -66,3 +69,4 @@ clean:
 	rm -fr $(OBJ) $(BIN)
 
 .PHONY: clean
+
