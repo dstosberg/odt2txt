@@ -37,6 +37,7 @@ static int opt_raw;
 static char *opt_encoding;
 static int opt_width = 63;
 static const char *opt_filename;
+static int opt_force;
 
 #define BUF_SZ 4096
 
@@ -56,7 +57,8 @@ static void usage(void)
 	       "Options:  --raw         Print raw XML\n"
 	       "          --encoding=X  Do not try to autodetect the terminal encoding, but\n"
 	       "                        convert the document to encoding X unconditionally\n"
-	       "          --width=X     Wrap text lines after X characters. Default: 65.\n\n");
+	       "          --width=X     Wrap text lines after X characters. Default: 65.\n"
+	       "          --force       Do not stop if the mimetype if unknown.\n\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -147,22 +149,27 @@ static STRBUF *conv(STRBUF *buf)
 	return output;
 }
 
-static STRBUF *unzip_doc(const char *filename)
+static STRBUF *read_from_zip(const char *zipfile, const char *filename)
 {
 	int r;
 	STRBUF *content;
 
-	kunzip_inflate_init();
-	r = kunzip_get_offset_by_name((char*)filename, "content.xml", 3, -1);
+	r = kunzip_get_offset_by_name((char*)zipfile, (char*)filename, 3, -1);
 
-	if(!r) {
+	if(-1 == r) {
 		fprintf(stderr,
-			"Can't open %s: Is it an OpenDocument Text?\n", filename);
+			"Can't read from %s: Is it an OpenDocument Text?\n", zipfile);
 		exit(EXIT_FAILURE);
 	}
 
-	content = kunzip_next_tobuf((char*)filename, r);
-	kunzip_inflate_free();
+	content = kunzip_next_tobuf((char*)zipfile, r);
+
+	if (!content) {
+		fprintf(stderr,
+			"Can't extract %s from %s.  Maybe the file is corrupted?\n",
+			filename, zipfile);
+		exit(EXIT_FAILURE);
+	}
 
 	return content;
 }
@@ -247,6 +254,7 @@ int main(int argc, const char **argv)
 	int free_opt_enc = 0;
 	STRBUF *docbuf;
 	STRBUF *outbuf;
+	STRBUF *mimetype;
 	int i = 1;
 
 	setlocale(LC_ALL, "");
@@ -265,6 +273,9 @@ int main(int argc, const char **argv)
 			opt_width = atoi(argv[i] + 8);
 			if(opt_width < 5)
 				usage();
+			i++; continue;
+		} else if (!strcmp(argv[i], "--force")) {
+			opt_force = 1;
 			i++; continue;
 		} else if (!strcmp(argv[i], "-")) {
 			usage();
@@ -299,7 +310,27 @@ int main(int argc, const char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	docbuf = unzip_doc(opt_filename);
+	kunzip_inflate_init();
+
+	/* check mimetype */
+	mimetype = read_from_zip(opt_filename, "mimetype");
+
+	if (0 == strcmp("application/vnd.oasis.opendocument.text",
+			strbuf_get(mimetype))
+	    && 0 == strcmp("application/vnd.sun.xml.writer",
+			   strbuf_get(mimetype))
+	    && !opt_force) {
+		fprintf(stderr, "Document has unknown mimetype: -%s-\n",
+			strbuf_get(mimetype));
+		fprintf(stderr, "Won't continue without --force.\n");
+		strbuf_free(mimetype);
+		exit(EXIT_FAILURE);
+	}
+	strbuf_free(mimetype);
+
+	/* read content.xml */
+	docbuf = read_from_zip(opt_filename, "content.xml");
+	kunzip_inflate_free();
 
 	if (!opt_raw)
 		format_doc(docbuf);
