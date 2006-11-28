@@ -17,6 +17,8 @@
 #include <iconv.h>
 #ifndef WIN32
 #include <langinfo.h>
+#else
+#include <windows.h>
 #endif
 #include <limits.h>
 #include <locale.h>
@@ -242,6 +244,7 @@ static void format_doc(STRBUF *buf)
 int main(int argc, const char **argv)
 {
 	struct stat st;
+	int free_opt_enc = 0;
 	STRBUF *docbuf;
 	STRBUF *outbuf;
 	int i = 1;
@@ -255,6 +258,7 @@ int main(int argc, const char **argv)
 		} else if (!strncmp(argv[i], "--encoding=", 11)) {
 			size_t arglen = strlen(argv[i]) - 10;
 			opt_encoding = ymalloc(arglen);
+			free_opt_enc = 1;
 			memcpy(opt_encoding, argv[i] + 11, arglen + 1);
 			i++; continue;
 		} else if (!strncmp(argv[i], "--width=", 8)) {
@@ -276,10 +280,12 @@ int main(int argc, const char **argv)
 		usage();
 
 	if(!opt_encoding) {
-#ifndef WIN32
-		opt_encoding = nl_langinfo(CODESET);
+#ifdef WIN32
+		opt_encoding = ymalloc(20);
+		free_opt_enc = 1;
+		snprintf(opt_encoding, 20, "CP%u", GetACP());
 #else
-		opt_encoding = "cp850";
+		opt_encoding = nl_langinfo(CODESET);
 #endif
 		if(!opt_encoding) {
 			fprintf(stderr, "warning: Could not detect console encoding. Assuming ISO-8859-1\n");
@@ -303,6 +309,9 @@ int main(int argc, const char **argv)
 
 	strbuf_free(docbuf);
 	strbuf_free(outbuf);
+
+	if (free_opt_enc)
+		yfree(opt_encoding);
 
 	return EXIT_SUCCESS;
 }
