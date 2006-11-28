@@ -1,3 +1,4 @@
+#include "../strbuf.h"
 
 /*
 
@@ -63,6 +64,14 @@ while(1)
 */
 
 long kunzip_next(char *zip_filename, char *base_dir, int offset);
+
+/*
+
+like kunzip next, but returns a string buffer with the file contents
+
+*/
+
+STRBUF *kunzip_next_tobuf(char *zip_filename, int offset);
 
 /*
 

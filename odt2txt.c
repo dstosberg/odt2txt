@@ -56,42 +56,6 @@ static void usage(void)
 	exit(EXIT_FAILURE);
 }
 
-static STRBUF *create_tmpdir()
-{
-	STRBUF *dirnam;
-	char *tmpdir;
-	char *pid;
-	size_t pidlen;
-	int r;
-
-	pid = ymalloc(20);
-	pidlen = snprintf(pid, 20,  "%d", (int)getpid());
-	if (pidlen >= 20 || pidlen <= 0) {
-		fprintf(stderr, "Couldn't get pid\n");
-		exit(EXIT_FAILURE);
-	}
-
-	tmpdir = getenv("TMPDIR");
-	if (!tmpdir)
-		tmpdir = "/tmp";
-
-	dirnam = strbuf_new();
-	strbuf_append(dirnam, tmpdir);
-	strbuf_append(dirnam, "/odt2txt-");
-	strbuf_append(dirnam, pid);
-	strbuf_append(dirnam, "/");
-	yfree(pid);
-
-	r = mkdir(strbuf_get(dirnam), S_IRWXU);
-	if (r != 0) {
-		fprintf(stderr, "Cannot create %s: %s",
-			strbuf_get(dirnam), strerror(errno));
-		exit(EXIT_FAILURE);
-	}
-
-	return(dirnam);
-}
-
 static void yrealloc_buf(char **buf, char **mark, size_t len) {
 	ptrdiff_t offset = *mark - *buf;
 	*buf = yrealloc(*buf, len);
@@ -179,11 +143,10 @@ static STRBUF *conv(STRBUF *buf)
 	return output;
 }
 
-static STRBUF *unzip_doc(const char *filename, STRBUF *tmpdir)
+static STRBUF *unzip_doc(const char *filename)
 {
 	int r;
-	STRBUF *content_file;
-	struct stat st;
+	STRBUF *content;
 
 	kunzip_inflate_init();
 	r = kunzip_get_offset_by_name((char*)filename, "content.xml", 3, -1);
@@ -194,67 +157,10 @@ static STRBUF *unzip_doc(const char *filename, STRBUF *tmpdir)
 		exit(EXIT_FAILURE);
 	}
 
-	r = kunzip_next((char*)filename, (char*)strbuf_get(tmpdir), r);
+	content = kunzip_next_tobuf((char*)filename, r);
 	kunzip_inflate_free();
 
-	content_file = strbuf_new();
-	strbuf_append(content_file, strbuf_get(tmpdir));
-	strbuf_append(content_file, "content.xml");
-
-	if (0 != stat(strbuf_get(content_file), &st)) {
-		fprintf(stderr, "Unzipping file failed. %s does not exist: %s\n",
-			strbuf_get(content_file), strerror(errno));
-		exit(EXIT_FAILURE);
-	}
-
-	 return content_file;
-}
-
-static STRBUF *read_doc(STRBUF *filename)
-{
-	int fd;
-	STRBUF *sbuf;
-	size_t fpos = 0;
-	char *buf;
-	char *bufp;
-	size_t buf_sz = BUF_SZ;
-
-	buf  = ymalloc(buf_sz);
-	bufp = buf;
-
-	fd = open(strbuf_get(filename), O_RDONLY);
-	if (fd == -1) {
-		fprintf(stderr, "Can't open %s: %s\n",
-			strbuf_get(filename), strerror(errno));
-		exit(EXIT_FAILURE);
-	}
-
-	while (1) {
-		size_t read_sz;
-
-		read_sz = read(fd, bufp, BUF_SZ);
-
-		if (read_sz == -1) {
-			fprintf(stderr, "Can't read from %s: %s\n",
-				strbuf_get(filename), strerror(errno));
-			exit(EXIT_FAILURE);
-		} else if (read_sz == 0)
-			break;
-
-		fpos += read_sz;
-
-		if ((int)buf_sz - (int)fpos < BUF_SZ) {
-			buf_sz += BUF_SZ;
-			buf = yrealloc(buf, buf_sz);
-		}
-
-		bufp = buf + fpos;
-	}
-
-	close(fd);
-
-	sbuf = strbuf_create_slurp_n(buf, fpos);
-	return sbuf;
+	return content;
 }
 
 #define RS_O(a,b) regex_subst(buf, (a), _REG_DEFAULT, (b))
@@ -334,8 +240,6 @@ static void format_doc(STRBUF *buf)
 int main(int argc, const char **argv)
 {
 	struct stat st;
-	STRBUF *tmpdir;
-	STRBUF *docfile;
 	STRBUF *docbuf;
 	STRBUF *outbuf;
 	int i = 1;
@@ -383,10 +287,7 @@ int main(int argc, const char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	tmpdir = create_tmpdir();
-	docfile = unzip_doc(opt_filename, tmpdir);
-
-	docbuf = read_doc(docfile);
+	docbuf = unzip_doc(opt_filename);
 
 	if (!opt_raw)
 		format_doc(docbuf);
@@ -394,20 +295,6 @@ int main(int argc, const char **argv)
 	outbuf = conv(docbuf);
 	output(outbuf, opt_width);
 
-	/* clean up */
-	if(0 != unlink(strbuf_get(docfile))) {
-		fprintf(stderr, "%s: %s",
-			strbuf_get(docfile), strerror(errno));
-		exit(EXIT_FAILURE);
-	}
-	strbuf_free(docfile);
-
-	if(0 != rmdir(strbuf_get(tmpdir))) {
-		fprintf(stderr, "%s: %s",
-			strbuf_get(tmpdir), strerror(errno));
-		exit(EXIT_FAILURE);
-	}
-	strbuf_free(tmpdir);
 	strbuf_free(docbuf);
 	strbuf_free(outbuf);
 

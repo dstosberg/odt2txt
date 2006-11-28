@@ -13,6 +13,7 @@
 #include "zipfile.h"
 #include "kinflate.h"
 #include "kunzip.h"
+#include "../strbuf.h"
 
 /*
 
@@ -130,6 +131,32 @@ int t,r;
 
     read_buffer(in,buffer,r);
     write_buffer(out,buffer,r);
+    checksum=crc32(buffer,r,checksum);
+    t=t+r;
+  }
+
+  return checksum^0xffffffff;
+}
+
+unsigned int copy_file_tobuf(FILE *in, STRBUF *out, int len)
+{
+unsigned char buffer[BUFFER_SIZE];
+unsigned int checksum;
+int t,r;
+
+  checksum=0xffffffff;
+
+  t=0;
+
+  while(t<len)
+  {
+    if (t+BUFFER_SIZE<len)
+    { r=BUFFER_SIZE; }
+      else
+    { r=len-t; }
+
+    read_buffer(in,buffer,r);
+    strbuf_append_n(out,buffer,r);
     checksum=crc32(buffer,r,checksum);
     t=t+r;
   }
@@ -370,6 +397,62 @@ That's MS-DOS time format btw.. which zip files use..
   return ret_code;
 }
 
+STRBUF* kunzip_file_tobuf(FILE *in)
+{
+STRBUF *out;
+struct zip_local_file_header_t local_file_header;
+int ret_code;
+int checksum;
+long marker;
+
+  ret_code=0;
+
+  if (read_zip_header(in,&local_file_header)==-1) return NULL;
+
+  local_file_header.file_name=(char *)malloc(local_file_header.file_name_length+1);
+  local_file_header.extra_field=(unsigned char *)malloc(local_file_header.extra_field_length+1);
+
+  read_chars(in,local_file_header.file_name,local_file_header.file_name_length);
+  read_chars(in,(char*)local_file_header.extra_field,local_file_header.extra_field_length);
+
+  marker=ftell(in);
+
+#ifdef DEBUG
+  print_zip_header(&local_file_header);
+#endif
+
+  out = strbuf_new();
+
+  if (local_file_header.compression_method==0)
+    {
+      checksum=copy_file_tobuf(in,out,local_file_header.uncompressed_size);
+    }
+  else
+    {
+      inflate_tobuf(in, out, (unsigned int*)&checksum);
+    }
+
+  if (checksum!=local_file_header.crc_32 && local_file_header.crc_32 != 0)
+    {
+      printf("Checksums don't match: %d %d\n",checksum,local_file_header.crc_32);
+      ret_code=-4;
+    }
+
+  free(local_file_header.file_name);
+  free(local_file_header.extra_field);
+
+  fseek(in,marker+local_file_header.compressed_size,SEEK_SET);
+
+  if ((local_file_header.general_purpose_bit_flag&8)!=0)
+  {
+    read_int(in);
+    read_int(in);
+    read_int(in);
+  }
+
+  return out;
+}
+
 int kunzip_all(char *zip_filename, char *base_dir)
 {
 FILE *in;
@@ -408,6 +491,25 @@ long marker;
   if (i<0) return i;
 
   return marker;
+}
+
+STRBUF *kunzip_next_tobuf(char *zip_filename, int offset)
+{
+FILE *in;
+STRBUF *buf;
+long marker;
+
+  in=fopen(zip_filename,"rb");
+  if (in==0)
+  { return NULL; }
+
+  fseek(in,offset,SEEK_SET);
+
+  buf=kunzip_file_tobuf(in);
+  marker=ftell(in);
+  fclose(in);
+
+  return buf;
 }
 
 int kunzip_count_files(char *zip_filename)
