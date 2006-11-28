@@ -15,7 +15,9 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <iconv.h>
+#ifndef WIN32
 #include <langinfo.h>
+#endif
 #include <limits.h>
 #include <locale.h>
 #include <stddef.h>
@@ -274,7 +276,11 @@ int main(int argc, const char **argv)
 		usage();
 
 	if(!opt_encoding) {
+#ifndef WIN32
 		opt_encoding = nl_langinfo(CODESET);
+#else
+		opt_encoding = "cp850";
+#endif
 		if(!opt_encoding) {
 			fprintf(stderr, "warning: Could not detect console encoding. Assuming ISO-8859-1\n");
 			opt_encoding = "ISO-8859-1";

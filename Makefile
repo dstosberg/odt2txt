@@ -9,6 +9,11 @@ CFLAGS = -O0 -g -Wall -DMEMDEBUG -DSTRBUF_CHECK
 #LDFLAGS = -lefence
 endif
 
+KUNZIP_OBJS = kunzip/fileio.o kunzip/zipfile.o kunzip/kinflate.o
+OBJ = odt2txt.o regex.o mem.o strbuf.o $(KUNZIP_OBJS)
+TEST_OBJ = t/test-strbuf.o t/test-regex.o
+ALL_OBJ = $(OBJ) $(TEST_OBJ)
+
 ifeq ($(UNAME_S),FreeBSD)
 	CFLAGS += -DICONV_CHAR="const char" -I/usr/local/include
 	LDFLAGS += -L/usr/local/lib
@@ -34,11 +39,17 @@ ifeq ($(UNAME_O),Cygwin)
 	LIBS += -liconv
 	EXT = .exe
 endif
+ifneq ($(MINGW32),)
+	CFLAGS += -DICONV_CHAR="const char" -I$(REGEX_DIR)
+	LIBS += $(REGEX_DIR)/regex.o
+	ifdef STATIC
+		LIBS += $(wildcard $(ICONV_DIR)/lib/.libs/*.o)
+	else
+		LIBS += -liconv
+	endif
+	EXT = .exe
+endif
 
-KUNZIP_OBJS = kunzip/fileio.o kunzip/zipfile.o kunzip/kinflate.o
-OBJ = odt2txt.o regex.o mem.o strbuf.o $(KUNZIP_OBJS)
-TEST_OBJ = t/test-strbuf.o t/test-regex.o
-ALL_OBJ = $(OBJ) $(TEST_OBJ)
 BIN = odt2txt$(EXT)
 
 $(BIN): $(OBJ)

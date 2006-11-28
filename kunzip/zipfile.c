@@ -164,6 +164,7 @@ int t,r;
   return checksum^0xffffffff;
 }
 
+#ifdef DISABLE
 int create_dirs(char *filename)
 {
 struct stat buf;
@@ -197,7 +198,7 @@ printf("path=%s\n",path);
 
   return 0;
 }
-
+#endif
 int read_zip_header(FILE *in, struct zip_local_file_header_t *local_file_header)
 {
   local_file_header->signature=read_int(in);
@@ -273,6 +274,7 @@ int print_zip_header(struct zip_local_file_header_t *local_file_header)
 }
 #endif
 
+#if 0
 int kunzip_file(FILE *in, char *base_dir)
 {
 char outname[1024];
@@ -396,6 +398,7 @@ That's MS-DOS time format btw.. which zip files use..
 
   return ret_code;
 }
+#endif
 
 STRBUF* kunzip_file_tobuf(FILE *in)
 {
@@ -453,6 +456,7 @@ long marker;
   return out;
 }
 
+#ifdef DISABLE
 int kunzip_all(char *zip_filename, char *base_dir)
 {
 FILE *in;
@@ -492,6 +496,7 @@ long marker;
 
   return marker;
 }
+#endif
 
 STRBUF *kunzip_next_tobuf(char *zip_filename, int offset)
 {
