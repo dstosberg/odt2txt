@@ -49,6 +49,10 @@ static int opt_force;
 #define ICONV_CHAR char
 #endif
 
+#ifdef iconvlist
+static void show_iconvlist();
+#endif
+
 struct subst {
 	char *utf;
 	char *ascii;
@@ -62,6 +66,10 @@ static void usage(void)
 	       "Options:  --raw         Print raw XML\n"
 	       "          --encoding=X  Do not try to autodetect the terminal encoding, but\n"
 	       "                        convert the document to encoding X unconditionally\n"
+#ifdef iconvlist
+	       "                        You can list all supported encodings by specifying\n"
+	       "                        --encoding=list\n"
+#endif
 	       "          --width=X     Wrap text lines after X characters. Default: 65.\n"
 	       "                        If set to -1 then no lines will be broken\n"
 	       "          --force       Do not stop if the mimetype if unknown.\n",
@@ -274,6 +282,11 @@ int main(int argc, const char **argv)
 			i++; continue;
 		} else if (!strncmp(argv[i], "--encoding=", 11)) {
 			size_t arglen = strlen(argv[i]) - 10;
+#ifdef iconvlist
+			if (!strcmp(argv[i] + 11, "list")) {
+				show_iconvlist();
+			}
+#endif
 			opt_encoding = ymalloc(arglen);
 			free_opt_enc = 1;
 			memcpy(opt_encoding, argv[i] + 11, arglen + 1);
@@ -362,3 +375,24 @@ int main(int argc, const char **argv)
 
 	return EXIT_SUCCESS;
 }
+
+#ifdef iconvlist
+static int print_one (unsigned int namescount, const char * const * names,
+                      void *data)
+{
+	int i;
+
+	for (i = 0; i < namescount; i++) {
+		if (i > 0)
+			putc(' ',stdout);
+		fputs(names[i],stdout);
+	}
+	putc('\n',stdout);
+	return 0;
+}
+
+static void show_iconvlist() {
+	iconvlist(print_one, NULL);
+	exit(EXIT_SUCCESS);
+}
+#endif
