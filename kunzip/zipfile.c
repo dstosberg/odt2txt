@@ -156,7 +156,7 @@ int t,r;
     { r=len-t; }
 
     read_buffer(in,buffer,r);
-    strbuf_append_n(out,buffer,r);
+    strbuf_append_n(out,(char*)buffer,r);
     checksum=crc32(buffer,r,checksum);
     t=t+r;
   }

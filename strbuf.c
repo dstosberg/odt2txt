@@ -184,7 +184,6 @@ STRBUF *strbuf_slurp_n(char *str, size_t len)
 	return buf;
 }
 
-
 char *strbuf_spit(STRBUF *buf)
 {
 	char *data;

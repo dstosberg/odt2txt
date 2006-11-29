@@ -43,8 +43,6 @@ static int opt_width = 63;
 static const char *opt_filename;
 static int opt_force;
 
-#define BUF_SZ 4096
-
 #ifndef ICONV_CHAR
 #define ICONV_CHAR char
 #endif
@@ -103,7 +101,7 @@ static STRBUF *conv(STRBUF *buf)
 				input_enc, opt_encoding);
 			ic = iconv_open("us-ascii", input_enc);
 			if (ic == (iconv_t)-1) {
-				exit(1);
+				exit(EXIT_FAILURE);
 			}
 			fprintf(stderr, "warning: Using us-ascii as fall-back.\n");
 		} else {
@@ -142,7 +140,7 @@ static STRBUF *conv(STRBUF *buf)
 				*out = '?';
 				out++;
 				outleft--;
-				inleft--;
+				inleft -= skip;
 				continue;
 			}
 			fprintf(stderr, "iconv returned: %s\n", strerror(errno));
@@ -190,9 +188,9 @@ static STRBUF *read_from_zip(const char *zipfile, const char *filename)
 	return content;
 }
 
-#define RS_O(a,b) regex_subst(buf, (a), _REG_DEFAULT, (b))
-#define RS_G(a,b) regex_subst(buf, (a), _REG_GLOBAL, (b))
-#define RS_E(a,b) regex_subst(buf, (a), _REG_EXEC | _REG_GLOBAL, (void*)(b))
+#define RS_O(a,b) (void)regex_subst(buf, (a), _REG_DEFAULT, (b))
+#define RS_G(a,b) (void)regex_subst(buf, (a), _REG_GLOBAL, (b))
+#define RS_E(a,b) (void)regex_subst(buf, (a), _REG_EXEC | _REG_GLOBAL, (void*)(b))
 
 static void format_doc(STRBUF *buf)
 {
@@ -216,7 +214,7 @@ static void format_doc(STRBUF *buf)
 		{ "\xE2\x80\x94" , "--" }, /* U+2014 em dash */
 		{ "\xE2\x80\x95" , "--" }, /* U+2015 quotation dash */
 
-		{ "\xE2\x80\xA2" , "o"  }, /* U+2022 bullet */
+		{ "\xE2\x80\xA2" , "o " }, /* U+2022 bullet */
 
 		{ "\xE2\x80\xA5" , ".." }, /* U+2025 double dot */
 		{ "\xE2\x80\xA5" , "..."}, /* U+2026 ellipsis */
@@ -261,6 +259,7 @@ static void format_doc(STRBUF *buf)
 /* 	s/<draw:frame(.*?)<\/draw:frame>/handle_image($1)/eg; */
 
 	RS_G("<[^>]*>", ""); 	       /* replace all remaining tags */
+	RS_G("\n +", "\n");            /* remove indentations, e.g. kword */
 	RS_G("\n{3,}", "\n\n");        /* remove large vertical spaces */
 }
 
@@ -274,7 +273,7 @@ int main(int argc, const char **argv)
 	STRBUF *mimetype;
 	int i = 1;
 
-	setlocale(LC_ALL, "");
+	(void)setlocale(LC_ALL, "");
 
 	while (argv[i]) {
 		if (!strcmp(argv[i], "--raw")) {
@@ -289,7 +288,7 @@ int main(int argc, const char **argv)
 #endif
 			opt_encoding = ymalloc(arglen);
 			free_opt_enc = 1;
-			memcpy(opt_encoding, argv[i] + 11, arglen + 1);
+			memcpy(opt_encoding, argv[i] + 11, arglen);
 			i++; continue;
 		} else if (!strncmp(argv[i], "--width=", 8)) {
 			opt_width = atoi(argv[i] + 8);
@@ -300,7 +299,7 @@ int main(int argc, const char **argv)
 			opt_force = 1;
 			i++; continue;
 		} else if (!strcmp(argv[i], "--help")) {
-			usage();;
+			usage();
 		} else if (!strcmp(argv[i], "-")) {
 			usage();
 		} else {
@@ -326,7 +325,8 @@ int main(int argc, const char **argv)
 		opt_encoding = nl_langinfo(CODESET);
 #endif
 		if(!opt_encoding) {
-			fprintf(stderr, "warning: Could not detect console encoding. Assuming ISO-8859-1\n");
+			fprintf(stderr, "warning: Could not detect console "
+				"encoding. Assuming ISO-8859-1\n");
 			opt_encoding = "ISO-8859-1";
 		}
 	}
@@ -337,7 +337,7 @@ int main(int argc, const char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	kunzip_inflate_init();
+	(void)kunzip_inflate_init();
 
 	/* check mimetype */
 	mimetype = read_from_zip(opt_filename, "mimetype");
@@ -357,7 +357,7 @@ int main(int argc, const char **argv)
 
 	/* read content.xml */
 	docbuf = read_from_zip(opt_filename, "content.xml");
-	kunzip_inflate_free();
+	(void)kunzip_inflate_free();
 
 	if (!opt_raw)
 		format_doc(docbuf);

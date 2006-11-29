@@ -1032,7 +1032,7 @@ if (code>=32 && code<=128)
       window[window_ptr++]=code;
       if (window_ptr>=WINDOW_SIZE)
       {
-        strbuf_append_n(out, window, WINDOW_SIZE);
+        strbuf_append_n(out, (char*)window, WINDOW_SIZE);
         huffman->checksum=crc32(huffman->window,WINDOW_SIZE,huffman->checksum);
         window_ptr=0;
       }
@@ -1190,7 +1190,7 @@ exit(0);
 
           if (window_ptr>=WINDOW_SIZE)
           {
-            strbuf_append_n(out, window, WINDOW_SIZE);
+            strbuf_append_n(out, (char*)window, WINDOW_SIZE);
             huffman->checksum=crc32(huffman->window,WINDOW_SIZE,huffman->checksum);
             window_ptr=0;
           }
@@ -1482,7 +1482,7 @@ printf("comp_method=%d  bfinal=%d\n",comp_method,bfinal);
 
         if (huffman.window_ptr>=WINDOW_SIZE)
         {
-	  strbuf_append_n(out, huffman.window, WINDOW_SIZE);
+	  strbuf_append_n(out, (char*)huffman.window, WINDOW_SIZE);
           huffman.checksum=crc32(huffman.window,WINDOW_SIZE,huffman.checksum);
           huffman.window_ptr=0;
         }
@@ -1522,7 +1522,7 @@ printf("comp_method=%d  bfinal=%d\n",comp_method,bfinal);
 
   if (huffman.window_ptr!=0)
   {
-    strbuf_append_n(out, huffman.window, huffman.window_ptr);
+    strbuf_append_n(out, (char*)huffman.window, huffman.window_ptr);
     huffman.checksum=crc32(huffman.window,huffman.window_ptr,huffman.checksum);
   }
 
