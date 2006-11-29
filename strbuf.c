@@ -33,7 +33,7 @@ static void strbuf_check(STRBUF *buf)
 	if (!buf->data)
 		die("buf->data is null");
 
-	if (strlen(buf->data) != buf->len)
+	if (!(buf->opt & STRBUF_NULLOK) && strlen(buf->data) != buf->len)
 		die("length mismatch. strlen says %u, len says %u",
 		    (unsigned int)strlen(buf->data), buf->len);
 
@@ -53,6 +53,8 @@ STRBUF *strbuf_new(void)
 
 	buf->len = 0;
 	buf->data[0] = '\0';
+
+	buf->opt = 0;
 
 	strbuf_check(buf);
 	return buf;
@@ -177,9 +179,11 @@ STRBUF *strbuf_slurp_n(char *str, size_t len)
 	buf->data = yrealloc(str, buf->buf_sz);
 	*(buf->data + len) = '\0';
 
-	strbuf_check(buf);
+	buf->opt = 0;
+
 	return buf;
 }
+
 
 char *strbuf_spit(STRBUF *buf)
 {
@@ -192,4 +196,9 @@ char *strbuf_spit(STRBUF *buf)
 	yfree(buf);
 
 	return data;
+}
+
+void strbuf_setopt(STRBUF *buf, enum strbuf_opt opt)
+{
+	buf->opt |= opt;
 }

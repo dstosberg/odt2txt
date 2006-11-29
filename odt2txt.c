@@ -60,6 +60,7 @@ static void usage(void)
 	       "          --encoding=X  Do not try to autodetect the terminal encoding, but\n"
 	       "                        convert the document to encoding X unconditionally\n"
 	       "          --width=X     Wrap text lines after X characters. Default: 65.\n"
+	       "                        If set to -1 then no lines will be broken\n"
 	       "          --force       Do not stop if the mimetype if unknown.\n\n");
 	exit(EXIT_FAILURE);
 }
@@ -148,6 +149,7 @@ static STRBUF *conv(STRBUF *buf)
 	}
 
 	output = strbuf_slurp_n(outbuf, (size_t)(out - outbuf));
+	strbuf_setopt(output, STRBUF_NULLOK);
 	return output;
 }
 
@@ -254,6 +256,7 @@ int main(int argc, const char **argv)
 {
 	struct stat st;
 	int free_opt_enc = 0;
+	STRBUF *wbuf;
 	STRBUF *docbuf;
 	STRBUF *outbuf;
 	STRBUF *mimetype;
@@ -273,7 +276,7 @@ int main(int argc, const char **argv)
 			i++; continue;
 		} else if (!strncmp(argv[i], "--width=", 8)) {
 			opt_width = atoi(argv[i] + 8);
-			if(opt_width < 5)
+			if(opt_width < -1)
 				usage();
 			i++; continue;
 		} else if (!strcmp(argv[i], "--force")) {
@@ -288,6 +291,9 @@ int main(int argc, const char **argv)
 			i++; continue;
 		}
 	}
+
+	if(opt_raw)
+		opt_width = -1;
 
 	if(!opt_filename)
 		usage();
@@ -337,9 +343,11 @@ int main(int argc, const char **argv)
 	if (!opt_raw)
 		format_doc(docbuf);
 
-	outbuf = conv(docbuf);
-	output(outbuf, opt_width);
+	wbuf = wrap(docbuf, opt_width);
+	outbuf = conv(wbuf);
+	fwrite(strbuf_get(outbuf), strbuf_len(outbuf), 1, stdout);
 
+	strbuf_free(wbuf);
 	strbuf_free(docbuf);
 	strbuf_free(outbuf);
 

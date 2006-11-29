@@ -52,7 +52,7 @@ char *h1(const char *buf, regmatch_t matches[], size_t nmatch, size_t off);
 char *h2(const char *buf, regmatch_t matches[], size_t nmatch, size_t off);
 
 /*
- * Prints the contents of buf to stdout, wrapped to a maximal line
- * width of width characters.
+ * Copies the contents of buf to a new string buffer, wrapped to a
+ * maximal line width of width characters.
  */
-void output(STRBUF *buf, int width);
+STRBUF *wrap(STRBUF *buf, int width);

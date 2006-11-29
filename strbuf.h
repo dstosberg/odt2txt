@@ -17,7 +17,12 @@ typedef struct strbuf {
 	char *data;
 	size_t len;
 	size_t buf_sz;
+	int opt;
 } STRBUF;
+
+enum strbuf_opt {
+	STRBUF_NULLOK = 1,
+};
 
 /*
  * Initialize a new empty string buffer.
@@ -84,5 +89,11 @@ char *strbuf_spit(STRBUF *buf);
  */
 int strbuf_subst(STRBUF *buf, size_t start, size_t stop,
 	      const char *subst);
+
+
+/*
+ * Set options for the string buffer
+ */
+void strbuf_setopt(STRBUF *buf, enum strbuf_opt opt);
 
 #endif /* STRBUF_H */

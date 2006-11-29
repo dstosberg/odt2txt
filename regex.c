@@ -168,7 +168,7 @@ static size_t charlen_utf8(const char *s)
 	return count;
 }
 
-void output(STRBUF *buf, int width)
+STRBUF *wrap(STRBUF *buf, int width)
 {
 	/* FIXME: This function should take multibyte utf8-encoded
 	   characters into account for the length calculation. */
@@ -178,38 +178,48 @@ void output(STRBUF *buf, int width)
 	const char *bufp;
 	const char *last;
 	const char *lastspace = 0;
-	int linelen = 0;
+	STRBUF *out = strbuf_new();
 
 	bufp = strbuf_get(buf);
 	last = bufp;
 
-	fwrite(lf, lflen, 1, stdout);
-	while (*bufp) {
+	if (width == -1) {
+		strbuf_append_n(out, strbuf_get(buf), strbuf_len(buf));
+		return out;
+	}
+
+	strbuf_append_n(out, lf, lflen);
+	while(bufp - strbuf_get(buf) < strbuf_len(buf)) {
 		if (*bufp == ' ')
 			lastspace = bufp;
 		else if (*bufp == '\n') {
-			while(*last == ' ')
-				last++;
+			strbuf_append_n(out, last, (size_t)(bufp - last));
+			do {
+				strbuf_append_n(out, lf, lflen);
+			} while (*++bufp == '\n');
+			lastspace = NULL;
 
-			fwrite(last, (size_t)(bufp - last), 1, stdout);
-			fwrite(lf, lflen, 1, stdout);
- 			last = bufp + 1;
-			linelen = 0;
+			while(*bufp == ' ') {
+				bufp++;
+			}
+			last = bufp;
 		}
 
-		if (linelen >= width) {
-			while(*last == ' ')
-				last++;
-
-			fwrite(last, (size_t)(lastspace - last), 1, stdout);
-			fwrite(lf, lflen, 1, stdout);
+		if (NULL != lastspace && (bufp - last) > width) {
+			strbuf_append_n(out, last, (size_t)(lastspace - last));
+			strbuf_append_n(out, lf, lflen);
 			last = lastspace;
-			linelen = 0;
-		}
+			lastspace = NULL;
 
+			while(*last == ' ') {
+				last++;
+			}
+			if(last > bufp)
+				bufp = last;
+		}
 		bufp++;
-		linelen++;
 	}
-	fputs("\n", stdout);
+	strbuf_append_n(out, "\n", 1);
+	return out;
 }
 

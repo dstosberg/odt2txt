@@ -2,11 +2,11 @@
 UNAME_S := $(shell uname -s)
 UNAME_O := $(shell uname -o)
 
-ifdef RELEASE
-CFLAGS = -O2
-else
+ifdef DEBUG
 CFLAGS = -O0 -g -Wall -DMEMDEBUG -DSTRBUF_CHECK
 #LDFLAGS = -lefence
+else
+CFLAGS = -O2
 endif
 
 KUNZIP_OBJS = kunzip/fileio.o kunzip/zipfile.o kunzip/kinflate.o
