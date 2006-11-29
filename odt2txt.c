@@ -35,6 +35,8 @@
 #include "strbuf.h"
 #include "kunzip/kunzip.h"
 
+#define VERSION "0.1"
+
 static int opt_raw;
 static char *opt_encoding;
 static int opt_width = 63;
@@ -54,14 +56,16 @@ struct subst {
 
 static void usage(void)
 {
-	printf("Syntax:   odt2txt [options] filename\n\n"
+	printf("odt2txt %s\n"
 	       "Converts an OpenDocument Text to raw text.\n\n"
+	       "Syntax:   odt2txt [options] filename\n\n"
 	       "Options:  --raw         Print raw XML\n"
 	       "          --encoding=X  Do not try to autodetect the terminal encoding, but\n"
 	       "                        convert the document to encoding X unconditionally\n"
 	       "          --width=X     Wrap text lines after X characters. Default: 65.\n"
 	       "                        If set to -1 then no lines will be broken\n"
-	       "          --force       Do not stop if the mimetype if unknown.\n\n");
+	       "          --force       Do not stop if the mimetype if unknown.\n",
+	       VERSION);
 	exit(EXIT_FAILURE);
 }
 
@@ -282,6 +286,8 @@ int main(int argc, const char **argv)
 		} else if (!strcmp(argv[i], "--force")) {
 			opt_force = 1;
 			i++; continue;
+		} else if (!strcmp(argv[i], "--help")) {
+			usage();;
 		} else if (!strcmp(argv[i], "-")) {
 			usage();
 		} else {
