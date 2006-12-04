@@ -125,6 +125,13 @@ static STRBUF *conv(STRBUF *buf)
 		conv = iconv(ic, &doc, &inleft, &out, &outleft);
 		if (conv == (size_t)-1) {
 			if(errno == E2BIG) {
+				outlen += alloc_step; outleft += alloc_step;
+				if (outlen > (strbuf_len(buf) << 3)) {
+					fprintf(stderr, "Buffer grew to much. "
+						"Corrupted document?\n");
+					exit(EXIT_FAILURE);
+				}
+				yrealloc_buf(&outbuf, &out, outlen);
 				continue;
 			} else if ((errno == EILSEQ) || (errno == EINVAL)) {
 				char skip = 1;
