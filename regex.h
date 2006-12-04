@@ -8,6 +8,9 @@
  * version 2 as published by the Free Software Foundation
  */
 
+#ifndef REGEX_H
+#define REGEX_H
+
 #include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,3 +59,20 @@ char *h2(const char *buf, regmatch_t matches[], size_t nmatch, size_t off);
  * maximal line width of width characters.
  */
 STRBUF *wrap(STRBUF *buf, int width);
+
+/*
+ * number of characters that follow in the byte sequence
+ */
+static const char utf8_length[128] =
+	{
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, /* 0x80-0x8f */
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, /* 0x90-0x9f */
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, /* 0xa0-0xaf */
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, /* 0xb0-0xbf */
+		1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, /* 0xc0-0xcf */
+		1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, /* 0xd0-0xdf */
+		2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2, /* 0xe0-0xef */
+		3,3,3,3,3,3,3,3,4,4,4,4,5,5,0,0  /* 0xf0-0xff */
+	};
+
+#endif /* REGEX_H */

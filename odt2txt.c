@@ -130,11 +130,7 @@ static STRBUF *conv(STRBUF *buf)
 				char skip = 1;
 
 				if ((unsigned char)*doc > 0x80)
-					skip++;
-				if ((unsigned char)*doc > 0xDF)
-					skip++;
-				if ((unsigned char)*doc > 0xF0)
-					skip++;
+					skip += utf8_length[(unsigned char)*doc - 0x80];
 
 				doc += skip;
 				*out = '?';

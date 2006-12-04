@@ -157,11 +157,7 @@ static size_t charlen_utf8(const char *s)
 	unsigned char *t = (unsigned char*) s;
 	while (*t != '\0') {
 		if (*t > 0x80)
-			t++;
-		if (*t > 0xDF)
-			t++;
-		if (*t > 0xF0)
-			t++;
+			t += utf8_length[*t - 0x80];
 		count++;
 		t++;
 	}
@@ -170,14 +166,12 @@ static size_t charlen_utf8(const char *s)
 
 STRBUF *wrap(STRBUF *buf, int width)
 {
-	/* FIXME: This function should take multibyte utf8-encoded
-	   characters into account for the length calculation. */
-
 	const char *lf = "\n  ";
 	const size_t lflen = strlen(lf);
 	const char *bufp;
 	const char *last;
 	const char *lastspace = 0;
+	size_t linelen = 0;
 	STRBUF *out = strbuf_new();
 
 	bufp = strbuf_get(buf);
@@ -203,13 +197,15 @@ STRBUF *wrap(STRBUF *buf, int width)
 				bufp++;
 			}
 			last = bufp;
+			linelen = 0;
 		}
 
-		if (NULL != lastspace && (bufp - last) > width) {
+		if (NULL != lastspace && linelen > width) {
 			strbuf_append_n(out, last, (size_t)(lastspace - last));
 			strbuf_append_n(out, lf, lflen);
 			last = lastspace;
 			lastspace = NULL;
+			linelen = (size_t)(bufp - last);
 
 			while(*last == ' ') {
 				last++;
@@ -217,7 +213,11 @@ STRBUF *wrap(STRBUF *buf, int width)
 			if(last > bufp)
 				bufp = last;
 		}
+
 		bufp++;
+		linelen++;
+		if ((unsigned char)*bufp > 0x80)
+			bufp += utf8_length[(unsigned char)*bufp - 0x80];
 	}
 	strbuf_append_n(out, "\n", 1);
 	return out;
