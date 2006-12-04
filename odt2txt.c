@@ -52,8 +52,63 @@ static void show_iconvlist();
 #endif
 
 struct subst {
-	char *utf;
+	int unicode;
 	char *ascii;
+};
+
+static int num_substs = -1;
+static struct subst substs[] = {
+	{ 0x00A0, " "  }, /* no-break space */
+	{ 0x00A9, "(c)"}, /* copyright sign */
+	{ 0x00AB, "<<" }, /* left double angle quote */
+	{ 0x00AD, "-"  }, /* soft hyphen */
+	{ 0x00AE, "(r)"}, /* registered sign */
+	{ 0x00BB, ">>" }, /* right double angle quote */
+
+	{ 0x00BC, "1/4"}, /* one quarter */
+	{ 0x00BD, "1/2"}, /* one half */
+	{ 0x00BE, "3/4"}, /* three quarters */
+
+	{ 0x00C4, "Ae" }, /* german umlaut A */
+	{ 0x00D6, "Oe" }, /* german umlaut O */
+	{ 0x00DC, "Ue" }, /* german umlaut U */
+	{ 0x00DF, "ss" }, /* german sharp s */
+	{ 0x00E4, "ae" }, /* german umlaut a */
+	{ 0x00F6, "oe" }, /* german umlaut o */
+	{ 0x00FC, "ue" }, /* german umlaut u */
+
+	{ 0x2010, "-"  }, /* hyphen */
+	{ 0x2011, "-"  }, /* non-breaking hyphen */
+	{ 0x2012, "-"  }, /* figure dash */
+	{ 0x2013, "-"  }, /* en dash */
+	{ 0x2014, "--" }, /* em dash */
+	{ 0x2015, "--" }, /* quotation dash */
+
+	{ 0x2018, "`"  }, /* single left quotation mark */
+	{ 0x2019, "'"  }, /* single right quotation mark */
+	{ 0x201A, ","  }, /* german single right quotation mark */
+	{ 0x201B, "`"  }, /* reversed right quotation mark */
+	{ 0x201C, "``" }, /* left quotation mark */
+	{ 0x201D, "''" }, /* right quotation mark */
+	{ 0x201E, ",," }, /* german left quotes */
+
+	{ 0x2022, "o " }, /* bullet */
+	{ 0x2022, "> " }, /* triangle bullet */
+
+	{ 0x2025, ".." }, /* double dot */
+	{ 0x2026, "..."}, /* ellipsis */
+
+	{ 0x2030, "o/oo"},/* per mille */
+	{ 0x2039, "<"  }, /* left single angle quote */
+	{ 0x203A, ">"  }, /* right single angle quote */
+
+	{ 0x20AC, "EUR"}, /* euro currency symbol */
+
+	{ 0x2190, "<-" }, /* left arrow */
+	{ 0x2192, "->" }, /* right arrow */
+	{ 0x2194, "<->"}, /* left right arrow */
+
+	{ 0, NULL },
 };
 
 static void usage(void)
@@ -73,6 +128,56 @@ static void usage(void)
 	       "          --force       Do not stop if the mimetype if unknown.\n",
 	       VERSION);
 	exit(EXIT_FAILURE);
+}
+
+static void init_substs() {
+	struct subst *s = substs;
+
+	while(s->unicode) {
+		s++;
+		num_substs++;
+	}
+}
+
+static const char *get_subst(int uc)
+{
+	struct subst *start = substs;
+	struct subst *end   = substs + num_substs;
+	struct subst *cur;
+
+	while (start + 1 < end) {
+		cur = start + ((end - start) / 2);
+		if (uc > cur->unicode)
+			start = cur;
+		else
+			end = cur;
+	}
+
+	if (uc == end->unicode)
+		return end->ascii;
+
+	if (uc == start->unicode)
+		return start->ascii;
+
+	return NULL;
+}
+
+static int utf8_to_uc(const char *utf8)
+{
+	const unsigned char *in = utf8;
+
+	if (!(*in & 0x80)) {               /* 0xxxxxxx */
+		return *in;
+	} else if ((*in & 0xE0) == 0xC0) { /* 110xxxxx 10xxxxxx */
+		return ((*in & 0x1F) << 6) + (*(in+1) & 0x3F);
+	} else if ((*in & 0xF0) == 0xE0) { /* 1110xxxx 10xxxxxx 10xxxxxx */
+		return ((*in & 0x0F) << 12) + ((*(in+1) & 0x3F) << 6) + (*(in+2) & 0x3F);
+	} else if ((*in & 0xF8) == 0xF0) { /* 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx */
+		return ((*in & 0x07) << 18) + ((*(in+1) & 0x3F) << 12)
+			+ ((*(in+2) & 0x3F) << 6) + ((*(in+3) & 0x3F));
+	}
+	/* rest is reserved */
+	return -1;
 }
 
 static void yrealloc_buf(char **buf, char **mark, size_t len) {
@@ -117,6 +222,8 @@ static STRBUF *conv(STRBUF *buf)
 	out = outbuf;
 	outleft = alloc_step;
 
+	init_substs();
+
 	do {
 		if (!outleft) {
 			outlen += alloc_step; outleft += alloc_step;
@@ -135,15 +242,24 @@ static STRBUF *conv(STRBUF *buf)
 				continue;
 			} else if ((errno == EILSEQ) || (errno == EINVAL)) {
 				char skip = 1;
+				const char *subst = get_subst(utf8_to_uc(doc));
 
+				/* do we have a substitution? */
+				if (!subst)
+					subst = "?";
+				while(*subst) {
+					*out = *subst;
+					out++;
+					subst++;
+					outleft--;
+				}
+
+				/* advance in source buffer */
 				if ((unsigned char)*doc > 0x80)
 					skip += utf8_length[(unsigned char)*doc - 0x80];
-
 				doc += skip;
-				*out = '?';
-				out++;
-				outleft--;
 				inleft -= skip;
+
 				continue;
 			}
 			fprintf(stderr, "iconv returned: %s\n", strerror(errno));
@@ -197,59 +313,8 @@ static STRBUF *read_from_zip(const char *zipfile, const char *filename)
 
 static void format_doc(STRBUF *buf)
 {
-	int i;
-
-	struct subst non_unicode[] = {
-		/* utf-8 sequence  , ascii substitution */
-
-		{ "\xE2\x80\x9C" , "``" }, /* U+201C left quotation mark */
-		{ "\xE2\x80\x9D" , "''" }, /* U+201D right quotation mark */
-		{ "\xE2\x80\x9E" , ",," }, /* U+201E german left quotes */
-
-		{ "\xC2\xBC"     , "1/4"}, /* U+00BC one quarter */
-		{ "\xC2\xBD"     , "1/2"}, /* U+00BD one half */
-		{ "\xC2\xBE"     , "3/4"}, /* U+00BE three quarters */
-
-		{ "\xE2\x80\x90" , "-"  }, /* U+2010 hyphen */
-		{ "\xE2\x80\x91" , "-"  }, /* U+2011 non-breaking hyphen */
-		{ "\xE2\x80\x92" , "-"  }, /* U+2012 figure dash */
-		{ "\xE2\x80\x93" , "-"  }, /* U+2013 en dash */
-		{ "\xE2\x80\x94" , "--" }, /* U+2014 em dash */
-		{ "\xE2\x80\x95" , "--" }, /* U+2015 quotation dash */
-
-		{ "\xE2\x80\xA2" , "o " }, /* U+2022 bullet */
-
-		{ "\xE2\x80\xA5" , ".." }, /* U+2025 double dot */
-		{ "\xE2\x80\xA5" , "..."}, /* U+2026 ellipsis */
-
-		{ "\xE2\x86\x90" , "<-" }, /* U+2190 left arrow */
-		{ "\xE2\x86\x92" , "->" }, /* U+2192 right arrow */
-		{ "\xE2\x86\x94" , "<->"}, /* U+2190 left right arrow */
-
-		{ "\xE2\x82\xAC" , "EUR"}, /* U+20AC euro currency symbol */
-
-		{ NULL, NULL },
-	};
-
 	/* FIXME: Convert buffer to utf-8 first.  Are there
 	   OpenOffice texts which are not utf8-encoded? */
-
-	/* FIXME: only substitute these if output is non-unicode */
-	i = 0;
-	while(non_unicode[i].utf) {
-		RS_G(non_unicode[i].utf, non_unicode[i].ascii);
-		i++;
-	}
-
-	RS_G("\xEF\x82\xAB", "<->"); /* Arrows, symbol font */
-	RS_G("\xEF\x82\xAC", "<-" );
-	RS_G("\xEF\x82\xAE", "->" );
-
-	RS_G("&apos;", "'");           /* common entities */
-	RS_G("&amp;",  "&");
-	RS_G("&quot;", "\"");
-	RS_G("&gt;",   ">");
-	RS_G("&lt;",   "<");
 
 	/* headline, first level */
 	RS_E("<text:h[^>]*outline-level=\"1\"[^>]*>([^<]*)<[^>]*>", &h1);
@@ -264,6 +329,12 @@ static void format_doc(STRBUF *buf)
 	RS_G("<[^>]*>", ""); 	       /* replace all remaining tags */
 	RS_G("\n +", "\n");            /* remove indentations, e.g. kword */
 	RS_G("\n{3,}", "\n\n");        /* remove large vertical spaces */
+
+	RS_G("&apos;", "'");           /* common entities */
+	RS_G("&amp;",  "&");
+	RS_G("&quot;", "\"");
+	RS_G("&gt;",   ">");
+	RS_G("&lt;",   "<");
 }
 
 int main(int argc, const char **argv)
