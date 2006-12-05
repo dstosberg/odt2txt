@@ -53,62 +53,63 @@ static void show_iconvlist();
 
 struct subst {
 	int unicode;
-	char *ascii;
+	const char *utf8;
+	const char *ascii;
 };
 
-static int num_substs = -1;
 static struct subst substs[] = {
-	{ 0x00A0, " "  }, /* no-break space */
-	{ 0x00A9, "(c)"}, /* copyright sign */
-	{ 0x00AB, "<<" }, /* left double angle quote */
-	{ 0x00AD, "-"  }, /* soft hyphen */
-	{ 0x00AE, "(r)"}, /* registered sign */
-	{ 0x00BB, ">>" }, /* right double angle quote */
+       /* number, UTF-8 sequence, ascii substitution */
+	{ 0x00A0, "\xC2\xA0",     " "        }, /* no-break space */
+	{ 0x00A9, "\xC2\xA9",     "(c)"      }, /* copyright sign */
+	{ 0x00AB, "\xC2\xAB",     "&lt;&lt;" }, /* left double angle quote */
+	{ 0x00AD, "\xC2\xAD",     "-"        }, /* soft hyphen */
+	{ 0x00AE, "\xC2\xAE",     "(r)"      }, /* registered sign */
+	{ 0x00BB, "\xC2\xBB",     "&gt;&gt;" }, /* right double angle quote */
 
-	{ 0x00BC, "1/4"}, /* one quarter */
-	{ 0x00BD, "1/2"}, /* one half */
-	{ 0x00BE, "3/4"}, /* three quarters */
+	{ 0x00BC, "\xC2\xBC",     "1/4"      }, /* one quarter */
+	{ 0x00BD, "\xC2\xBD",     "1/2"      }, /* one half */
+	{ 0x00BE, "\xC2\xBE",     "3/4"      }, /* three quarters */
 
-	{ 0x00C4, "Ae" }, /* german umlaut A */
-	{ 0x00D6, "Oe" }, /* german umlaut O */
-	{ 0x00DC, "Ue" }, /* german umlaut U */
-	{ 0x00DF, "ss" }, /* german sharp s */
-	{ 0x00E4, "ae" }, /* german umlaut a */
-	{ 0x00F6, "oe" }, /* german umlaut o */
-	{ 0x00FC, "ue" }, /* german umlaut u */
+	{ 0x00C4, "\xC3\x84",     "Ae"       }, /* german umlaut A */
+	{ 0x00D6, "\xC3\x96",     "Oe"       }, /* german umlaut O */
+	{ 0x00DC, "\xC3\x9C",     "Ue"       }, /* german umlaut U */
+	{ 0x00DF, "\xC3\x9F",     "ss"       }, /* german sharp s */
+	{ 0x00E4, "\xC3\xA4",     "ae"       }, /* german umlaut a */
+	{ 0x00F6, "\xC3\xB6",     "oe"       }, /* german umlaut o */
+	{ 0x00FC, "\xC3\xBC",     "ue"       }, /* german umlaut u */
 
-	{ 0x2010, "-"  }, /* hyphen */
-	{ 0x2011, "-"  }, /* non-breaking hyphen */
-	{ 0x2012, "-"  }, /* figure dash */
-	{ 0x2013, "-"  }, /* en dash */
-	{ 0x2014, "--" }, /* em dash */
-	{ 0x2015, "--" }, /* quotation dash */
+	{ 0x2010, "\xE2\x80\x90", "-"        }, /* hyphen */
+	{ 0x2011, "\xE2\x80\x91", "-"        }, /* non-breaking hyphen */
+	{ 0x2012, "\xE2\x80\x92", "-"        }, /* figure dash */
+	{ 0x2013, "\xE2\x80\x93", "-"        }, /* en dash */
+	{ 0x2014, "\xE2\x80\x94", "--"       }, /* em dash */
+	{ 0x2015, "\xE2\x80\x95", "--"       }, /* quotation dash */
 
-	{ 0x2018, "`"  }, /* single left quotation mark */
-	{ 0x2019, "'"  }, /* single right quotation mark */
-	{ 0x201A, ","  }, /* german single right quotation mark */
-	{ 0x201B, "`"  }, /* reversed right quotation mark */
-	{ 0x201C, "``" }, /* left quotation mark */
-	{ 0x201D, "''" }, /* right quotation mark */
-	{ 0x201E, ",," }, /* german left quotes */
+	{ 0x2018, "\xE2\x80\x98", "`"        }, /* single left quotation mark */
+	{ 0x2019, "\xE2\x80\x99", "&apos;"   }, /* single right quotation mark */
+	{ 0x201A, "\xE2\x80\x9A", ","        }, /* german single right quotation mark */
+	{ 0x201B, "\xE2\x80\x9B", "`"        }, /* reversed right quotation mark */
+	{ 0x201C, "\xE2\x80\x9C", "``"       }, /* left quotation mark */
+	{ 0x201D, "\xE2\x80\x9D", "''"       }, /* right quotation mark */
+	{ 0x201E, "\xE2\x80\x9E", ",,"       }, /* german left quotes */
 
-	{ 0x2022, "o " }, /* bullet */
-	{ 0x2022, "> " }, /* triangle bullet */
+	{ 0x2022, "\xE2\x80\xA2", "o "       }, /* bullet */
+	{ 0x2022, "\xE2\x80\xA3", "&lt; "    }, /* triangle bullet */
 
-	{ 0x2025, ".." }, /* double dot */
-	{ 0x2026, "..."}, /* ellipsis */
+	{ 0x2025, "\xE2\x80\xA5", ".."       }, /* double dot */
+	{ 0x2026, "\xE2\x80\xA6", "..."      }, /* ellipsis */
 
-	{ 0x2030, "o/oo"},/* per mille */
-	{ 0x2039, "<"  }, /* left single angle quote */
-	{ 0x203A, ">"  }, /* right single angle quote */
+	{ 0x2030, "\xE2\x80\xB0", "o/oo"     }, /* per mille */
+	{ 0x2039, "\xE2\x80\xB9", "&lt;"     }, /* left single angle quote */
+	{ 0x203A, "\xE2\x80\xBA", "&gt;"     }, /* right single angle quote */
 
-	{ 0x20AC, "EUR"}, /* euro currency symbol */
+	{ 0x20AC, "\xE2\x82\xAC", "EUR"      }, /* euro currency symbol */
 
-	{ 0x2190, "<-" }, /* left arrow */
-	{ 0x2192, "->" }, /* right arrow */
-	{ 0x2194, "<->"}, /* left right arrow */
+	{ 0x2190, "\xE2\x86\x90", "&lt;-"    }, /* left arrow */
+	{ 0x2192, "\xE2\x86\x92", "-&gt;"    }, /* right arrow */
+	{ 0x2194, "\xE2\x86\x94", "&lt;-&gt;"}, /* left right arrow */
 
-	{ 0, NULL },
+	{ 0,      NULL,           NULL },
 };
 
 static void usage(void)
@@ -130,76 +131,16 @@ static void usage(void)
 	exit(EXIT_FAILURE);
 }
 
-static void init_substs() {
-	struct subst *s = substs;
-
-	while(s->unicode) {
-		s++;
-		num_substs++;
-	}
-}
-
-static const char *get_subst(int uc)
-{
-	struct subst *start = substs;
-	struct subst *end   = substs + num_substs;
-	struct subst *cur;
-
-	while (start + 1 < end) {
-		cur = start + ((end - start) / 2);
-		if (uc > cur->unicode)
-			start = cur;
-		else
-			end = cur;
-	}
-
-	if (uc == end->unicode)
-		return end->ascii;
-
-	if (uc == start->unicode)
-		return start->ascii;
-
-	return NULL;
-}
-
-static int utf8_to_uc(const char *utf8)
-{
-	const unsigned char *in = utf8;
-
-	if (!(*in & 0x80)) {               /* 0xxxxxxx */
-		return *in;
-	} else if ((*in & 0xE0) == 0xC0) { /* 110xxxxx 10xxxxxx */
-		return ((*in & 0x1F) << 6) + (*(in+1) & 0x3F);
-	} else if ((*in & 0xF0) == 0xE0) { /* 1110xxxx 10xxxxxx 10xxxxxx */
-		return ((*in & 0x0F) << 12) + ((*(in+1) & 0x3F) << 6) + (*(in+2) & 0x3F);
-	} else if ((*in & 0xF8) == 0xF0) { /* 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx */
-		return ((*in & 0x07) << 18) + ((*(in+1) & 0x3F) << 12)
-			+ ((*(in+2) & 0x3F) << 6) + ((*(in+3) & 0x3F));
-	}
-	/* rest is reserved */
-	return -1;
-}
-
 static void yrealloc_buf(char **buf, char **mark, size_t len) {
 	ptrdiff_t offset = *mark - *buf;
 	*buf = yrealloc(*buf, len);
 	*mark = *buf + offset;
 }
 
-static STRBUF *conv(STRBUF *buf)
+static iconv_t init_conv(const char *input_enc, const char *output_enc)
 {
-	/* FIXME: This functionality belongs into strbuf.c */
 	iconv_t ic;
-	ICONV_CHAR *doc;
-	char *out, *outbuf;
-	size_t inleft, outleft = 0;
-	size_t conv;
-	size_t outlen = 0;
-	const size_t alloc_step = 4096;
-	STRBUF *output;
-
-	char *input_enc = "utf-8";
-	ic = iconv_open(opt_encoding, input_enc);
+	ic = iconv_open(output_enc, input_enc);
 	if (ic == (iconv_t)-1) {
 		if (errno == EINVAL) {
 			fprintf(stderr, "warning: Conversion from %s to %s is not supported.\n",
@@ -214,6 +155,27 @@ static STRBUF *conv(STRBUF *buf)
 			exit(EXIT_FAILURE);
 		}
 	}
+	return ic;
+}
+
+static void finish_conv(iconv_t ic)
+{
+	if(iconv_close(ic) == -1) {
+		fprintf(stderr, "iconv_close returned: %s\n", strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+}
+
+static STRBUF *conv(iconv_t ic, STRBUF *buf)
+{
+	/* FIXME: This functionality belongs into strbuf.c */
+	ICONV_CHAR *doc;
+	char *out, *outbuf;
+	size_t inleft, outleft = 0;
+	size_t r;
+	size_t outlen = 0;
+	const size_t alloc_step = 4096;
+	STRBUF *output;
 
 	inleft = strbuf_len(buf);
 	doc = (ICONV_CHAR*)strbuf_get(buf);
@@ -222,15 +184,13 @@ static STRBUF *conv(STRBUF *buf)
 	out = outbuf;
 	outleft = alloc_step;
 
-	init_substs();
-
 	do {
 		if (!outleft) {
 			outlen += alloc_step; outleft += alloc_step;
 			yrealloc_buf(&outbuf, &out, outlen);
 		}
-		conv = iconv(ic, &doc, &inleft, &out, &outleft);
-		if (conv == (size_t)-1) {
+		r = iconv(ic, &doc, &inleft, &out, &outleft);
+		if (r == (size_t)-1) {
 			if(errno == E2BIG) {
 				outlen += alloc_step; outleft += alloc_step;
 				if (outlen > (strbuf_len(buf) << 3)) {
@@ -242,23 +202,17 @@ static STRBUF *conv(STRBUF *buf)
 				continue;
 			} else if ((errno == EILSEQ) || (errno == EINVAL)) {
 				char skip = 1;
-				const char *subst = get_subst(utf8_to_uc(doc));
-
-				/* do we have a substitution? */
-				if (!subst)
-					subst = "?";
-				while(*subst) {
-					*out = *subst;
-					out++;
-					subst++;
-					outleft--;
-				}
 
 				/* advance in source buffer */
 				if ((unsigned char)*doc > 0x80)
 					skip += utf8_length[(unsigned char)*doc - 0x80];
 				doc += skip;
 				inleft -= skip;
+
+				/* advance in output buffer */
+				*out = '?';
+				out++;
+				outleft--;
 
 				continue;
 			}
@@ -271,11 +225,6 @@ static STRBUF *conv(STRBUF *buf)
 		outbuf = yrealloc(outbuf, outlen + 1);
 	}
 	*out = '\0';
-
-	if(iconv_close(ic) == -1) {
-		fprintf(stderr, "iconv_close returned: %s\n", strerror(errno));
-		exit(EXIT_FAILURE);
-	}
 
 	output = strbuf_slurp_n(outbuf, (size_t)(out - outbuf));
 	strbuf_setopt(output, STRBUF_NULLOK);
@@ -311,7 +260,39 @@ static STRBUF *read_from_zip(const char *zipfile, const char *filename)
 #define RS_G(a,b) (void)regex_subst(buf, (a), _REG_GLOBAL, (b))
 #define RS_E(a,b) (void)regex_subst(buf, (a), _REG_EXEC | _REG_GLOBAL, (void*)(b))
 
-static void format_doc(STRBUF *buf)
+static void subst_doc(iconv_t ic, STRBUF *buf)
+{
+	struct subst *s = substs;
+	ICONV_CHAR *in;
+	size_t inleft;
+	const size_t outbuf_sz = 20;
+	char *outbuf = ymalloc(outbuf_sz);
+	char *out;
+	size_t outleft;
+	size_t r;
+
+	while (s->unicode) {
+		out = outbuf;
+		outleft = outbuf_sz;
+		in = (ICONV_CHAR*)s->utf8;
+		inleft = strlen(in);
+		r = iconv(ic, &in, &inleft, &out, &outleft);
+		if (r == (size_t)-1) {
+			if ((errno == EILSEQ) || (errno == EINVAL)) {
+				RS_G(s->utf8, s->ascii);
+			} else {
+				fprintf(stderr,
+					"iconv returned an unexpected error: %s\n",
+					strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+		}
+		s++;
+	}
+	yfree(outbuf);
+}
+
+static void format_doc(iconv_t ic, STRBUF *buf)
 {
 	/* FIXME: Convert buffer to utf-8 first.  Are there
 	   OpenOffice texts which are not utf8-encoded? */
@@ -341,6 +322,7 @@ int main(int argc, const char **argv)
 {
 	struct stat st;
 	int free_opt_enc = 0;
+	iconv_t ic;
 	STRBUF *wbuf;
 	STRBUF *docbuf;
 	STRBUF *outbuf;
@@ -405,6 +387,8 @@ int main(int argc, const char **argv)
 		}
 	}
 
+	ic = init_conv("utf-8", opt_encoding);
+
 	if (0 != stat(opt_filename, &st)) {
 		fprintf(stderr, "%s: %s\n",
 			opt_filename, strerror(errno));
@@ -433,13 +417,16 @@ int main(int argc, const char **argv)
 	docbuf = read_from_zip(opt_filename, "content.xml");
 	(void)kunzip_inflate_free();
 
-	if (!opt_raw)
-		format_doc(docbuf);
+	if (!opt_raw) {
+		subst_doc(ic, docbuf);
+		format_doc(ic, docbuf);
+	}
 
 	wbuf = wrap(docbuf, opt_width);
-	outbuf = conv(wbuf);
+	outbuf = conv(ic, wbuf);
 	fwrite(strbuf_get(outbuf), strbuf_len(outbuf), 1, stdout);
 
+	finish_conv(ic);
 	strbuf_free(wbuf);
 	strbuf_free(docbuf);
 	strbuf_free(outbuf);
