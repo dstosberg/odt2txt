@@ -303,19 +303,23 @@ static void format_doc(iconv_t ic, STRBUF *buf)
 	RS_G("<text:p [^>]*>", "\n\n");            /* normal paragraphs */
 	RS_G("</text:p>", "\n\n");
 	RS_G("<text:tab/>", "  ");                 /* tabs */
+	RS_G("<text:line-break/>", "\n");
 
 /* 	# images */
 /* 	s/<draw:frame(.*?)<\/draw:frame>/handle_image($1)/eg; */
 
-	RS_G("<[^>]*>", ""); 	       /* replace all remaining tags */
-	RS_G("\n +", "\n");            /* remove indentations, e.g. kword */
-	RS_G("\n{3,}", "\n\n");        /* remove large vertical spaces */
+	RS_G("<[^>]*>", ""); 	 /* replace all remaining tags */
+	RS_G("\n +", "\n");      /* remove indentations, e.g. kword */
+	RS_G("\n{3,}", "\n\n");  /* remove large vertical spaces */
 
-	RS_G("&apos;", "'");           /* common entities */
+	RS_G("&apos;", "'");     /* common entities */
 	RS_G("&amp;",  "&");
 	RS_G("&quot;", "\"");
 	RS_G("&gt;",   ">");
 	RS_G("&lt;",   "<");
+
+	RS_O("^\n+",  "");       /* blank lines at beginning and end of document */
+	RS_O("\n+$",  "");
 }
 
 int main(int argc, const char **argv)
