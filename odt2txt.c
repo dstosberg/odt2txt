@@ -51,6 +51,8 @@ static int opt_force;
 static void show_iconvlist();
 #endif
 
+static char *guess_encoding(void);
+
 struct subst {
 	int unicode;
 	const char *utf8;
@@ -124,6 +126,8 @@ static void usage(void)
 	       "                        You can list all supported encodings by specifying\n"
 	       "                        --encoding=list\n"
 #endif
+	       "                        To find out, which terminal encoding will be used in\n"
+	       "                        auto mode, use --encoding=show\n"
 	       "          --width=X     Wrap text lines after X characters. Default: 65.\n"
 	       "                        If set to -1 then no lines will be broken\n"
 	       "          --force       Do not stop if the mimetype if unknown.\n",
@@ -322,10 +326,30 @@ static void format_doc(iconv_t ic, STRBUF *buf)
 	RS_O("\n+$",  "");
 }
 
+static char *guess_encoding(void)
+{
+	char *enc;
+	char *tmp;
+
+	enc = ymalloc(20);
+#ifdef WIN32
+	snprintf(enc, 20, "CP%u", GetACP());
+#else
+	tmp = nl_langinfo(CODESET);
+	strncpy(enc, tmp, 20);
+#endif
+	if(!enc) {
+		fprintf(stderr, "warning: Could not detect console "
+			"encoding. Assuming ISO-8859-1\n");
+		strncpy(enc, "ISO-8859-1", 20);
+	}
+
+	return enc;
+}
+
 int main(int argc, const char **argv)
 {
 	struct stat st;
-	int free_opt_enc = 0;
 	iconv_t ic;
 	STRBUF *wbuf;
 	STRBUF *docbuf;
@@ -347,7 +371,6 @@ int main(int argc, const char **argv)
 			}
 #endif
 			opt_encoding = ymalloc(arglen);
-			free_opt_enc = 1;
 			memcpy(opt_encoding, argv[i] + 11, arglen);
 			i++; continue;
 		} else if (!strncmp(argv[i], "--width=", 8)) {
@@ -370,26 +393,23 @@ int main(int argc, const char **argv)
 		}
 	}
 
+	if(opt_encoding && !strcmp("show", opt_encoding)) {
+		yfree(opt_encoding);
+		opt_encoding = guess_encoding();
+		printf("%s\n", opt_encoding);
+		yfree(opt_encoding);
+		exit(EXIT_SUCCESS);
+	}
+
+	if(!opt_encoding) {
+		opt_encoding = guess_encoding();
+	}
+
 	if(opt_raw)
 		opt_width = -1;
 
 	if(!opt_filename)
 		usage();
-
-	if(!opt_encoding) {
-#ifdef WIN32
-		opt_encoding = ymalloc(20);
-		free_opt_enc = 1;
-		snprintf(opt_encoding, 20, "CP%u", GetACP());
-#else
-		opt_encoding = nl_langinfo(CODESET);
-#endif
-		if(!opt_encoding) {
-			fprintf(stderr, "warning: Could not detect console "
-				"encoding. Assuming ISO-8859-1\n");
-			opt_encoding = "ISO-8859-1";
-		}
-	}
 
 	ic = init_conv("utf-8", opt_encoding);
 
@@ -435,8 +455,7 @@ int main(int argc, const char **argv)
 	strbuf_free(docbuf);
 	strbuf_free(outbuf);
 
-	if (free_opt_enc)
-		yfree(opt_encoding);
+	yfree(opt_encoding);
 
 	return EXIT_SUCCESS;
 }
