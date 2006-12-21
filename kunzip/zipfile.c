@@ -3,9 +3,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#ifndef DLL
 #include <utime.h>
-#endif
 #include <time.h>
 #include <unistd.h>
 
@@ -24,18 +22,6 @@ modify it under the terms of the GNU General Public License,
 version 2 as published by the Free Software Foundation
 
 */
-
-#ifdef DLL
-
-struct utimbuf
-{
-  int actime;
-  int modtime;
-};
-
-int utime(char *outname, struct utimbuf *my_utimbuf);
-
-#endif
 
 char *strcasestr_m(char *hejstack, char *needle)
 {
@@ -112,32 +98,6 @@ int ch;
 }
 */
 
-unsigned int copy_file(FILE *in, FILE *out, int len)
-{
-unsigned char buffer[BUFFER_SIZE];
-unsigned int checksum;
-int t,r;
-
-  checksum=0xffffffff;
-
-  t=0;
-
-  while(t<len)
-  {
-    if (t+BUFFER_SIZE<len)
-    { r=BUFFER_SIZE; }
-      else
-    { r=len-t; }
-
-    read_buffer(in,buffer,r);
-    write_buffer(out,buffer,r);
-    checksum=crc32(buffer,r,checksum);
-    t=t+r;
-  }
-
-  return checksum^0xffffffff;
-}
-
 unsigned int copy_file_tobuf(FILE *in, STRBUF *out, int len)
 {
 unsigned char buffer[BUFFER_SIZE];
@@ -164,41 +124,6 @@ int t,r;
   return checksum^0xffffffff;
 }
 
-#ifdef DISABLE
-int create_dirs(char *filename)
-{
-struct stat buf;
-char path[1024];
-int s;
-
-  strcpy(path,filename);
-
-  s=strlen(path);
-  if (s==0) return -1;
-
-  while (path[s]!='/' && path[s]!='\\') s--;
-  path[s]=0;
-
-#ifdef DEBUG
-printf("path=%s\n",path);
-#endif
-
-  if (stat(path,&buf)!=0)
-  {
-    if (create_dirs(path)==-1) return -1;
-#ifdef DEBUG
-    printf("Creating directory: %s\n",path);
-#endif
-#ifndef DLL
-    if (mkdir(path,0777)!=0) return -1;
-#else
-    if (mkdir(path)!=0) return -1;
-#endif
-  }
-
-  return 0;
-}
-#endif
 int read_zip_header(FILE *in, struct zip_local_file_header_t *local_file_header)
 {
   local_file_header->signature=read_int(in);
@@ -274,132 +199,6 @@ int print_zip_header(struct zip_local_file_header_t *local_file_header)
 }
 #endif
 
-#if 0
-int kunzip_file(FILE *in, char *base_dir)
-{
-char outname[1024];
-FILE *out;
-struct zip_local_file_header_t local_file_header;
-int ret_code;
-time_t date_time;
-int checksum;
-long marker;
-struct utimbuf my_utimbuf;
-struct tm my_tm;
-
-  ret_code=0;
-
-  if (read_zip_header(in,&local_file_header)==-1) return -1;
-
-  local_file_header.file_name=(char *)malloc(local_file_header.file_name_length+1);
-  local_file_header.extra_field=(unsigned char *)malloc(local_file_header.extra_field_length+1);
-
-  read_chars(in,local_file_header.file_name,local_file_header.file_name_length);
-  read_chars(in,(char*)local_file_header.extra_field,local_file_header.extra_field_length);
-
-  marker=ftell(in);
-
-#ifdef DEBUG
-  print_zip_header(&local_file_header);
-#endif
-
-
-  if (base_dir[strlen(base_dir)-1]!='/' && base_dir[strlen(base_dir)-1]!='\\')
-  { sprintf(outname,"%s/%s",base_dir,local_file_header.file_name); }
-    else
-  { sprintf(outname,"%s%s",base_dir,local_file_header.file_name); }
-
-  if (create_dirs(outname)!=0)
-  {
-    printf("Could not create directories\n");
-    return -2;
-  }
-
-#ifndef QUIET
-  /*  printf("unzipping: %s\n",outname); */
-#endif
-
-/*  if (local_file_header.uncompressed_size!=0)
-    { */
-    out=fopen(outname,"wb+");
-    if (out==0)
-    {
-      printf("Error: Cannot open output file: %s\n",outname);
-      return -3;
-    }
-
-    if (local_file_header.compression_method==0)
-    {
-      checksum=copy_file(in,out,local_file_header.uncompressed_size);
-    }
-      else
-    {
-      inflate(in, out, (unsigned int*)&checksum);
-/* printf("start=%d end=%d total=%d should_be=%d\n",marker,(int)ftell(in),(int)ftell(in)-marker,local_file_header.compressed_size); */
-    }
-
-    fclose(out);
-
-/*
-
-From google groups:
-
-The time is store in a WORD (2 bytes/16bits) where :
-Bit  0 -  4  Seconds / 2
-     5 - 10  Minutes
-    11 - 15  Hours
-
-and the date in another WORD with the following structure :
-Bit  0 -  4  Day
-     5 -  8  Month
-     9 - 15  Years since 1980 
-
-^^^ PUKE!!!!!!!!!!!!
-
-That's MS-DOS time format btw.. which zip files use.. 
-
-*/
-    /* memset(&my_tm,0,sizeof(struct tm)); */
-
-    my_tm.tm_sec=(local_file_header.last_mod_file_time&31)*2;
-    my_tm.tm_min=(local_file_header.last_mod_file_time>>5)&63;
-    my_tm.tm_hour=(local_file_header.last_mod_file_time>>11);
-    my_tm.tm_mday=(local_file_header.last_mod_file_date&31);
-    my_tm.tm_mon=((local_file_header.last_mod_file_date>>5)&15)-1;
-    my_tm.tm_year=(local_file_header.last_mod_file_date>>9)+80;
-    my_tm.tm_wday=0;
-    my_tm.tm_yday=0;
-    my_tm.tm_isdst=0;
-
-    date_time=mktime(&my_tm);
-
-    my_utimbuf.actime=date_time;
-    my_utimbuf.modtime=date_time;
-    utime(outname,&my_utimbuf);
-
-    if (checksum!=local_file_header.crc_32 && local_file_header.crc_32 != 0)
-    {
-      printf("Checksums don't match: %d %d\n",checksum,local_file_header.crc_32);
-      ret_code=-4;
-    }
-/* } */
-
-  free(local_file_header.file_name);
-  free(local_file_header.extra_field);
-
-  fseek(in,marker+local_file_header.compressed_size,SEEK_SET);
-
-  if ((local_file_header.general_purpose_bit_flag&8)!=0)
-  {
-    read_int(in);
-    read_int(in);
-    read_int(in);
-  }
-
-  return ret_code;
-}
-#endif
-
 STRBUF* kunzip_file_tobuf(FILE *in)
 {
 STRBUF *out;
@@ -456,48 +255,6 @@ long marker;
   return out;
 }
 
-#ifdef DISABLE
-int kunzip_all(char *zip_filename, char *base_dir)
-{
-FILE *in;
-int i;
-
-  in=fopen(zip_filename,"rb");
-  if (in==0)
-  { return -1; }
-
-  while(1)
-  {
-    i=kunzip_file(in,base_dir);
-    if (i!=0) break;
-  }
-
-  fclose(in);
-
-  return 0;
-}
-
-long kunzip_next(char *zip_filename, char *base_dir, int offset)
-{
-FILE *in;
-int i;
-long marker;
-
-  in=fopen(zip_filename,"rb");
-  if (in==0)
-  { return -1; }
-
-  fseek(in,offset,SEEK_SET);
-
-  i=kunzip_file(in,base_dir);
-  marker=ftell(in);
-  fclose(in);
-  if (i<0) return i;
-
-  return marker;
-}
-#endif
-
 STRBUF *kunzip_next_tobuf(char *zip_filename, int offset)
 {
 FILE *in;
@@ -515,74 +272,6 @@ long marker;
   fclose(in);
 
   return buf;
-}
-
-int kunzip_count_files(char *zip_filename)
-{
-FILE *in;
-struct zip_local_file_header_t local_file_header;
-int count;
-int i;
-
-  in=fopen(zip_filename,"rb");
-  if (in==0)
-  { return -1; }
-
-  count=0;
-
-  while(1)
-  {
-    i=read_zip_header(in,&local_file_header);
-    if (i==-1) break;
-
-    fseek(in,local_file_header.compressed_size+
-             local_file_header.file_name_length+
-             local_file_header.extra_field_length+
-             local_file_header.descriptor_length,SEEK_CUR);
-
-    count++;
-  }
-
-
-  fclose(in);
-
-  return count;
-}
-
-int kunzip_get_offset_by_number(char *zip_filename, int file_count)
-{
-FILE *in;
-struct zip_local_file_header_t local_file_header;
-int count;
-int i=0,curr;
-
-  in=fopen(zip_filename,"rb");
-  if (in==0)
-  { return -1; }
-
-  count=0;
-
-  while(1)
-  {
-    curr=ftell(in);
-    if (count==file_count) break;
-
-    i=read_zip_header(in,&local_file_header);
-    if (i==-1) break;
-
-    fseek(in,local_file_header.compressed_size+
-             local_file_header.file_name_length+
-             local_file_header.extra_field_length,SEEK_CUR);
-
-    count++;
-  }
-
-  fclose(in);
-
-  if (i!=-1)
-  { return curr; }
-    else
-  { return -1; }
 }
 
 /*
@@ -665,81 +354,4 @@ long marker;
     else
   { return -1; }
 }
-
-int kunzip_get_name(char *zip_filename, char *name, int offset)
-{
-FILE *in;
-struct zip_local_file_header_t local_file_header;
-int i;
-
-  in=fopen(zip_filename,"rb");
-  if (in==0)
-  { return -1; }
-
-  fseek(in,offset,SEEK_SET);
-
-  i=read_zip_header(in,&local_file_header);
-  if (i<0) return i;
-
-  read_chars(in,name,local_file_header.file_name_length);
-
-  fclose(in);
-
-  return 0;
-}
-
-int kunzip_get_filesize(char *zip_filename, int offset)
-{
-FILE *in;
-struct zip_local_file_header_t local_file_header;
-int i;
-
-  in=fopen(zip_filename,"rb");
-  if (in==0)
-  { return -1; }
-
-  fseek(in,offset,SEEK_SET);
-
-  i=read_zip_header(in,&local_file_header);
-  if (i<0) return i;
-
-  fclose(in);
-
-  return local_file_header.uncompressed_size;
-}
-
-time_t kunzip_get_modtime(char *zip_filename, int offset)
-{
-FILE *in;
-struct zip_local_file_header_t local_file_header;
-time_t date_time;
-struct tm my_tm;
-int i;
-
-  in=fopen(zip_filename,"rb");
-  if (in==0)
-  { return -1; }
-
-  fseek(in,offset,SEEK_SET);
-
-  i=read_zip_header(in,&local_file_header);
-  if (i<0) return i;
-
-  fclose(in);
-
-  my_tm.tm_sec=(local_file_header.last_mod_file_time&31)*2;
-  my_tm.tm_min=(local_file_header.last_mod_file_time>>5)&63;
-  my_tm.tm_hour=(local_file_header.last_mod_file_time>>11);
-  my_tm.tm_mday=(local_file_header.last_mod_file_date&31);
-  my_tm.tm_mon=((local_file_header.last_mod_file_date>>5)&15)-1;
-  my_tm.tm_year=(local_file_header.last_mod_file_date>>9)+80;
-  my_tm.tm_wday=0;
-  my_tm.tm_yday=0;
-  my_tm.tm_isdst=0;
-
-  date_time=mktime(&my_tm);
-
-  return date_time;
-}
-
 

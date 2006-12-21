@@ -32,78 +32,8 @@ kunzip_inflate_free - Must be called when kunzip is no longer needed to
 
 int kunzip_inflate_free();
 
-/*
-
-kunzip_all - Unzips all files in a zip archive into the base dir.
-
-Example: kunzip_all("test.zip","/tmp");
-
-Will unzip all files from test.zip into the /tmp dir
-
-*/
-
-int kunzip_all(char *zip_filename, char *base_dir);
-
-/*
-
-kunzip next - Unzips the file in a zip archive that exsits that the
-              provided file offset.  This returns the offset to the
-              file in the archive.
-
-
-Example: This code should unzip all the files in test.zip one by one
-
-int offset=0;
-
-while(1)
-{
-  offset=kunzip_all("test.zip","/tmp",offset);
-  if (offset==-1) break;
-}
-
-*/
-
-long kunzip_next(char *zip_filename, char *base_dir, int offset);
-
-/*
-
-like kunzip next, but returns a string buffer with the file contents
-
-*/
 
 STRBUF *kunzip_next_tobuf(char *zip_filename, int offset);
-
-/*
-
-kunzip_count_files - Returns the number of files in the zip archive
-                     including directories.
-
-Example: count=kunzip_count_files("test.zip");
-
-count will equal the number of files and directories that will be
-created if kunzip_all is called.
-
-*/
-
-int kunzip_count_files(char *zip_filename);
-
-/*
-
-kunzip_get_offset_by_number - Returns the offset to the file that is
-                      x number of files from the begining. Files in a
-                      zip archive start at 0 and end at zip_count_files-1
-
-Example:
-
-kunzip_get_offset_by_number("test.zip",0); // should return an offset of 0
-kunzip_get_offset_by_number("test.zip",1); // should return an offset to the
-                                              second file in the archive 
-
-
-*/
-
-
-int kunzip_get_offset_by_number(char *zip_filename, int file_count);
 
 /*
 
@@ -141,39 +71,6 @@ int kunzip_get_offset_by_name(char *zip_filename, char *compressed_filename, int
 
 /*
 
-kunzip_get_name - Get the name of the archived file at this offset.
-
-*/
-
-int kunzip_get_name(char *zip_filename, char *name, int offset);
-
-/*
-
-kunzip_get_filesize - Get the filesize of the archived file at this offset.
-
-*/
-
-int kunzip_get_filesize(char *zip_filename, int offset);
-
-/*
-
-kunzip_get_modtime - Get the modified time of the archived file at this offset
-                    in time_t format
-
-*/
-
-time_t kunzip_get_modtime(char *zip_filename, int offset);
-
-/*
-
-kunzip_print_version - Print the kunzip library version to the console
-
-*/
-
-int kunzip_print_version();
-
-/*
-
 kunzip_get_version - Get the current kunzip library version.
 
 Example:
@@ -185,7 +82,4 @@ Example:
 */
 
 int kunzip_get_version(char *version_string);
-
-
-
 

@@ -11,24 +11,6 @@ version 2 as published by the Free Software Foundation
 
 */
 
-int write_int(FILE *out, int n)
-{
-  putc((n&255),out);
-  putc(((n>>8)&255),out);
-  putc(((n>>16)&255),out);
-  putc(((n>>24)&255),out);
-
-  return 0;
-}
-
-int write_word(FILE *out, int n)
-{
-  putc((n&255),out);
-  putc(((n>>8)&255),out);
-
-  return 0;
-}
-
 int read_int(FILE *in)
 {
 int c;
@@ -61,37 +43,6 @@ int t;
   }
 
   s[t]=0;
-
-  return 0;
-}
-
-int write_chars(FILE *out, char *s)
-{
-int t;
-
-  t=0;
-  while(s[t]!=0 && t<255)
-  {
-    putc(s[t++],out);
-  }
-
-  return 0;
-}
-
-int write_int_b(FILE *out, int n)
-{
-  putc(((n>>24)&255),out);
-  putc(((n>>16)&255),out);
-  putc(((n>>8)&255),out);
-  putc((n&255),out);
-
-  return 0;
-}
-
-int write_word_b(FILE *out, int n)
-{
-  putc(((n>>8)&255),out);
-  putc((n&255),out);
 
   return 0;
 }
@@ -130,19 +81,4 @@ int t;
 
   return t;
 }
-
-int write_buffer(FILE *out, unsigned char *buffer, int len)
-{
-int t;
-
-  t=0;
-  while (t<len)
-  {
-    t=t+fwrite(buffer+t,1,len-t,out);
-  }
-
-  return t;
-}
-
-
 
