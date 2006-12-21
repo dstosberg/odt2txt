@@ -6,6 +6,7 @@
 #include "kinflate.h"
 #include "zipfile.h"
 #include "../strbuf.h"
+#include "../mem.h"
 
 /*
 
@@ -160,7 +161,7 @@ int t,r,b,rev_code;
 int kunzip_inflate_free()
 {
   if (huffman_tree_len_static!=0)
-  { free(huffman_tree_len_static); }
+  { yfree(huffman_tree_len_static); }
 
   return 0;
 }
@@ -307,7 +308,7 @@ printf("load_fixed_huffman()\n");
 
   huffman->dist_huff_count=0;
 
-  huffman_tree=malloc(600*sizeof(struct huffman_tree_t));
+  huffman_tree=ymalloc(600*sizeof(struct huffman_tree_t));
 
   *huffman_tree_ptr=huffman_tree;
 
@@ -967,8 +968,8 @@ struct huffman_tree_t *huffman_tree_dist;
   huffman.checksum=0xffffffff;
 
   huffman_tree_len_static=0;
-  huffman_tree_len=malloc(1024*sizeof(struct huffman_tree_t));
-  huffman_tree_dist=malloc(1024*sizeof(struct huffman_tree_t));
+  huffman_tree_len=ymalloc(1024*sizeof(struct huffman_tree_t));
+  huffman_tree_dist=ymalloc(1024*sizeof(struct huffman_tree_t));
 
   huffman.window_ptr=0;
 
@@ -1069,7 +1070,7 @@ printf("comp_method=%d  bfinal=%d\n",comp_method,bfinal);
       { load_fixed_huffman(&huffman, &huffman_tree_len_static); }
       decompress_tobuf(in, &huffman, &bitstream, huffman_tree_len_static, 0, out);
 /*
-      free(huffman_tree_len);
+      yfree(huffman_tree_len);
       huffman_tree_len=0;
 */
     }
@@ -1101,11 +1102,11 @@ printf("comp_method=%d  bfinal=%d\n",comp_method,bfinal);
 
 /*
   if (buffer!=0)
-  { free(buffer); }
+  { yfree(buffer); }
 */
 
-  if (huffman_tree_len!=0) free(huffman_tree_len);
-  if (huffman_tree_dist!=0) free(huffman_tree_dist);
+  if (huffman_tree_len!=0) yfree(huffman_tree_len);
+  if (huffman_tree_dist!=0) yfree(huffman_tree_dist);
 
   *checksum=huffman.checksum^0xffffffff;
 

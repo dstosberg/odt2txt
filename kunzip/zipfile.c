@@ -12,6 +12,7 @@
 #include "kinflate.h"
 #include "kunzip.h"
 #include "../strbuf.h"
+#include "../mem.h"
 
 /*
 
@@ -211,8 +212,8 @@ long marker;
 
   if (read_zip_header(in,&local_file_header)==-1) return NULL;
 
-  local_file_header.file_name=(char *)malloc(local_file_header.file_name_length+1);
-  local_file_header.extra_field=(unsigned char *)malloc(local_file_header.extra_field_length+1);
+  local_file_header.file_name=(char *)ymalloc(local_file_header.file_name_length+1);
+  local_file_header.extra_field=(unsigned char *)ymalloc(local_file_header.extra_field_length+1);
 
   read_chars(in,local_file_header.file_name,local_file_header.file_name_length);
   read_chars(in,(char*)local_file_header.extra_field,local_file_header.extra_field_length);
@@ -240,8 +241,8 @@ long marker;
       ret_code=-4;
     }
 
-  free(local_file_header.file_name);
-  free(local_file_header.extra_field);
+  yfree(local_file_header.file_name);
+  yfree(local_file_header.extra_field);
 
   fseek(in,marker+local_file_header.compressed_size,SEEK_SET);
 
@@ -310,9 +311,9 @@ long marker;
 
       if (name_size<local_file_header.file_name_length+1)
       {
-        if (name_size!=0) free(name);
+        if (name_size!=0) yfree(name);
         name_size=local_file_header.file_name_length+1;
-        name=malloc(name_size);
+        name=ymalloc(name_size);
       }
 
       read_chars(in,name,local_file_header.file_name_length);
@@ -345,7 +346,7 @@ long marker;
 
   }
 
-  if (name_size!=0) free(name);
+  if (name_size!=0) yfree(name);
 
   fclose(in);
 
