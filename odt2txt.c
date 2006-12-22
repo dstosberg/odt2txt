@@ -130,9 +130,25 @@ static void usage(void)
 	       "                        auto mode, use --encoding=show\n"
 	       "          --width=X     Wrap text lines after X characters. Default: 65.\n"
 	       "                        If set to -1 then no lines will be broken\n"
-	       "          --force       Do not stop if the mimetype if unknown.\n",
+	       "          --force       Do not stop if the mimetype if unknown.\n"
+	       "          --version     Show version and copyright information\n",
 	       VERSION);
 	exit(EXIT_FAILURE);
+}
+
+static void version_info(void)
+{
+	printf("odt2txt %s\n"
+	       "Copyright (c) 2006 Dennis Stosberg <dennis@stosberg.net>\n"
+	       "Uses the kunzip library, Copyright 2005-2006 by Michael Kohn\n"
+	       "\n"
+	       "This program is free software; you can redistribute it and/or\n"
+	       "modify it under the terms of the GNU General Public License,\n"
+	       "version 2 as published by the Free Software Foundation\n"
+	       "\n"
+	       "Homepage: http://stosberg.net/odt2txt/\n",
+	       VERSION);
+	exit(EXIT_SUCCESS);
 }
 
 static void yrealloc_buf(char **buf, char **mark, size_t len) {
@@ -383,6 +399,9 @@ int main(int argc, const char **argv)
 			i++; continue;
 		} else if (!strcmp(argv[i], "--help")) {
 			usage();
+		} else if (!strcmp(argv[i], "--version")
+			   || !strcmp(argv[i], "-v")) {
+			version_info();
 		} else if (!strcmp(argv[i], "-")) {
 			usage();
 		} else {
