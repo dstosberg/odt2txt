@@ -35,7 +35,7 @@
 #include "strbuf.h"
 #include "kunzip/kunzip.h"
 
-#define VERSION "0.1"
+#define VERSION "0.2-pre"
 
 static int opt_raw;
 static char *opt_encoding;
