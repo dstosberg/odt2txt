@@ -394,8 +394,11 @@ int main(int argc, const char **argv)
 			i++; continue;
 		} else if (!strncmp(argv[i], "--width=", 8)) {
 			opt_width = atoi(argv[i] + 8);
-			if(opt_width < -1)
-				usage();
+			if(opt_width < 3) {
+				fprintf(stderr, "Invalid value for width: %s\n",
+					argv[i] + 8);
+				exit(EXIT_FAILURE);
+			}
 			i++; continue;
 		} else if (!strcmp(argv[i], "--force")) {
 			opt_force = 1;
