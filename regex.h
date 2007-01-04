@@ -55,6 +55,11 @@ char *h1(const char *buf, regmatch_t matches[], size_t nmatch, size_t off);
 char *h2(const char *buf, regmatch_t matches[], size_t nmatch, size_t off);
 
 /*
+ * Replace match with the name of the image frame
+ */
+char *image(const char *buf, regmatch_t matches[], size_t nmatch, size_t off);
+
+/*
  * Copies the contents of buf to a new string buffer, wrapped to a
  * maximal line width of width characters.
  */

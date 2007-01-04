@@ -151,6 +151,27 @@ char *h2(const char *buf, regmatch_t matches[], size_t nmatch, size_t off)
 	return headline('-', buf, matches, nmatch, off);
 }
 
+char *image(const char *buf, regmatch_t matches[], size_t nmatch, size_t off)
+{
+	const int i = 1;
+	const char *prefix = "[-- Image: ";
+	const char *postfix = " --]";
+	size_t pr_len, po_len, len;
+	char *match;
+
+	pr_len = strlen(prefix);
+	len = matches[i].rm_eo - matches[i].rm_so;
+	po_len = strlen(prefix);
+
+	match = ymalloc(pr_len + len + po_len + 1);
+	memcpy(match, prefix, pr_len);
+	memcpy(match + pr_len, buf + matches[i].rm_so + off, len);
+	memcpy(match + pr_len + len, postfix, po_len);
+	match[pr_len + len + po_len] = '\0' ;
+
+	return match;
+}
+
 static size_t charlen_utf8(const char *s)
 {
 	size_t count = 0;

@@ -350,8 +350,8 @@ static void format_doc(iconv_t ic, STRBUF *buf)
 	RS_G("<text:tab/>", "  ");                 /* tabs */
 	RS_G("<text:line-break/>", "\n");
 
-/* 	# images */
-/* 	s/<draw:frame(.*?)<\/draw:frame>/handle_image($1)/eg; */
+	/* images */
+	RS_E("<draw:frame[^>]*draw:name=\"([^\"]*)\"[^>]*>", &image);
 
 	RS_G("<[^>]*>", ""); 	 /* replace all remaining tags */
 	RS_G("\n +", "\n");      /* remove indentations, e.g. kword */
@@ -364,7 +364,7 @@ static void format_doc(iconv_t ic, STRBUF *buf)
 	RS_G("&lt;",   "<");
 
 	RS_O("^\n+",  "");       /* blank lines at beginning and end of document */
-	RS_O("\n+$",  "");
+	RS_O("\n{2,}$",  "\n");
 }
 
 static char *guess_encoding(void)
