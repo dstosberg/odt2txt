@@ -433,15 +433,15 @@ int main(int argc, const char **argv)
 		exit(EXIT_SUCCESS);
 	}
 
-	if(!opt_encoding) {
-		opt_encoding = guess_encoding();
-	}
-
 	if(opt_raw)
 		opt_width = -1;
 
 	if(!opt_filename)
 		usage();
+
+	if(!opt_encoding) {
+		opt_encoding = guess_encoding();
+	}
 
 	ic = init_conv("utf-8", opt_encoding);
 
