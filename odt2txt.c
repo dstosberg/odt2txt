@@ -42,6 +42,7 @@ static char *opt_encoding;
 static int opt_width = 63;
 static const char *opt_filename;
 static int opt_force;
+static char *opt_output;
 
 #ifndef ICONV_CHAR
 #define ICONV_CHAR char
@@ -52,6 +53,7 @@ static void show_iconvlist();
 #endif
 
 static char *guess_encoding(void);
+static void write_to_file(STRBUF *outbuf, const char *filename);
 
 struct subst {
 	int unicode;
@@ -130,6 +132,7 @@ static void usage(void)
 	       "                        auto mode, use --encoding=show\n"
 	       "          --width=X     Wrap text lines after X characters. Default: 65.\n"
 	       "                        If set to -1 then no lines will be broken\n"
+	       "          --output=file Write output to file, instead of STDOUT\n"
 	       "          --force       Do not stop if the mimetype if unknown.\n"
 	       "          --version     Show version and copyright information\n",
 	       VERSION);
@@ -397,6 +400,13 @@ int main(int argc, const char **argv)
 		} else if (!strcmp(argv[i], "--force")) {
 			opt_force = 1;
 			i++; continue;
+		} else if (!strncmp(argv[i], "--output=", 9)) {
+			if (*(argv[i] + 9) != '-') {
+				size_t arglen = strlen(argv[i]) - 8;
+				opt_output = ymalloc(arglen);
+				memcpy(opt_output, argv[i] + 9, arglen);
+			}
+			i++; continue;
 		} else if (!strcmp(argv[i], "--help")) {
 			usage();
 		} else if (!strcmp(argv[i], "--version")
@@ -467,7 +477,11 @@ int main(int argc, const char **argv)
 
 	wbuf = wrap(docbuf, opt_width);
 	outbuf = conv(ic, wbuf);
-	fwrite(strbuf_get(outbuf), strbuf_len(outbuf), 1, stdout);
+
+	if (opt_output)
+		write_to_file(outbuf, opt_output);
+	else
+		fwrite(strbuf_get(outbuf), strbuf_len(outbuf), 1, stdout);
 
 	finish_conv(ic);
 	strbuf_free(wbuf);
@@ -475,9 +489,32 @@ int main(int argc, const char **argv)
 	strbuf_free(outbuf);
 
 	yfree(opt_encoding);
+	if (opt_output)
+		yfree(opt_output);
 
 	return EXIT_SUCCESS;
 }
+
+static void write_to_file(STRBUF *outbuf, const char *filename)
+{
+	int fd;
+	ssize_t len;
+
+	fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	if (fd == -1) {
+		fprintf(stderr, "Can't open %s: %s\n", filename, strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	len = write(fd, strbuf_get(outbuf), strbuf_len(outbuf));
+	if (len == -1) {
+		fprintf(stderr, "Can't write to %s: %s\n", filename, strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	close(fd);
+}
+
 
 #ifdef iconvlist
 static int print_one (unsigned int namescount, const char * const * names,
