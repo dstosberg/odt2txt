@@ -44,6 +44,12 @@ static const char *opt_filename;
 static int opt_force;
 static char *opt_output;
 
+#define SUBST_NONE 0
+#define SUBST_SOME 1
+#define SUBST_ALL  2
+
+static int opt_subst = SUBST_SOME;
+
 #ifndef ICONV_CHAR
 #define ICONV_CHAR char
 #endif
@@ -133,7 +139,15 @@ static void usage(void)
 	       "          --width=X     Wrap text lines after X characters. Default: 65.\n"
 	       "                        If set to -1 then no lines will be broken\n"
 	       "          --output=file Write output to file, instead of STDOUT\n"
-	       "          --force       Do not stop if the mimetype if unknown.\n"
+	       "          --subst=X     Select which non-ascii characters shall be replaced\n"
+	       "                        by ascii look-a-likes:\n"
+	       "                           --subst=all   Substitute all characters for which\n"
+	       "                                         substitutions are known\n"
+	       "                           --subst=some  Substitute all characters which the\n"
+	       "                                         output charset does not contain\n"
+	       "                                         This is the default\n"
+	       "                           --subst=none  Substitute no characters\n"
+	       "          --force       Do not stop if the mimetype if unknown\n"
 	       "          --version     Show version and copyright information\n",
 	       VERSION);
 	exit(EXIT_FAILURE);
@@ -289,25 +303,33 @@ static void subst_doc(iconv_t ic, STRBUF *buf)
 	ICONV_CHAR *in;
 	size_t inleft;
 	const size_t outbuf_sz = 20;
-	char *outbuf = ymalloc(outbuf_sz);
+	char *outbuf;
 	char *out;
 	size_t outleft;
 	size_t r;
 
+	if (opt_subst == SUBST_NONE)
+		return;
+
+	outbuf = ymalloc(outbuf_sz);
 	while (s->unicode) {
-		out = outbuf;
-		outleft = outbuf_sz;
-		in = (ICONV_CHAR*)s->utf8;
-		inleft = strlen(in);
-		r = iconv(ic, &in, &inleft, &out, &outleft);
-		if (r == (size_t)-1) {
-			if ((errno == EILSEQ) || (errno == EINVAL)) {
-				RS_G(s->utf8, s->ascii);
-			} else {
-				fprintf(stderr,
-					"iconv returned an unexpected error: %s\n",
-					strerror(errno));
-				exit(EXIT_FAILURE);
+		if (opt_subst == SUBST_ALL) {
+			RS_G(s->utf8, s->ascii);
+		} else {
+			out = outbuf;
+			outleft = outbuf_sz;
+			in = (ICONV_CHAR*)s->utf8;
+			inleft = strlen(in);
+			r = iconv(ic, &in, &inleft, &out, &outleft);
+			if (r == (size_t)-1) {
+				if ((errno == EILSEQ) || (errno == EINVAL)) {
+					RS_G(s->utf8, s->ascii);
+				} else {
+					fprintf(stderr,
+						"iconv returned an unexpected error: %s\n",
+						strerror(errno));
+					exit(EXIT_FAILURE);
+				}
 			}
 		}
 		s++;
@@ -408,6 +430,19 @@ int main(int argc, const char **argv)
 				size_t arglen = strlen(argv[i]) - 8;
 				opt_output = ymalloc(arglen);
 				memcpy(opt_output, argv[i] + 9, arglen);
+			}
+			i++; continue;
+		} else if (!strncmp(argv[i], "--subst=", 8)) {
+			if (!strcmp(argv[i] + 8, "none"))
+				opt_subst = SUBST_NONE;
+			else if (!strcmp(argv[i] + 8, "some"))
+				opt_subst = SUBST_SOME;
+			else if (!strcmp(argv[i] + 8, "all"))
+				opt_subst = SUBST_ALL;
+			else {
+				fprintf(stderr, "Invalid value for --subst: %s\n",
+					argv[i] + 8);
+				exit(EXIT_FAILURE);
 			}
 			i++; continue;
 		} else if (!strcmp(argv[i], "--help")) {
