@@ -337,7 +337,7 @@ static void subst_doc(iconv_t ic, STRBUF *buf)
 	yfree(outbuf);
 }
 
-static void format_doc(iconv_t ic, STRBUF *buf)
+static void format_doc(STRBUF *buf)
 {
 	/* FIXME: Convert buffer to utf-8 first.  Are there
 	   OpenOffice texts which are not utf8-encoded? */
@@ -510,7 +510,7 @@ int main(int argc, const char **argv)
 
 	if (!opt_raw) {
 		subst_doc(ic, docbuf);
-		format_doc(ic, docbuf);
+		format_doc(docbuf);
 	}
 
 	wbuf = wrap(docbuf, opt_width);
