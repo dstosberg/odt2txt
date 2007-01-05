@@ -2,7 +2,7 @@
  * odt2txt.c: A simple (and stupid) converter from OpenDocument Text
  *            to plain text.
  *
- * Copyright (c) 2006 Dennis Stosberg <dennis@stosberg.net>
+ * Copyright (c) 2006,2007 Dennis Stosberg <dennis@stosberg.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License,
@@ -35,7 +35,7 @@
 #include "strbuf.h"
 #include "kunzip/kunzip.h"
 
-#define VERSION "0.2-pre"
+#define VERSION "0.2"
 
 static int opt_raw;
 static char *opt_encoding;
@@ -156,8 +156,8 @@ static void usage(void)
 static void version_info(void)
 {
 	printf("odt2txt %s\n"
-	       "Copyright (c) 2006 Dennis Stosberg <dennis@stosberg.net>\n"
-	       "Uses the kunzip library, Copyright 2005-2006 by Michael Kohn\n"
+	       "Copyright (c) 2006,2007 Dennis Stosberg <dennis@stosberg.net>\n"
+	       "Uses the kunzip library, Copyright 2005,2006 by Michael Kohn\n"
 	       "\n"
 	       "This program is free software; you can redistribute it and/or\n"
 	       "modify it under the terms of the GNU General Public License,\n"
