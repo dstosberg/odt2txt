@@ -17,7 +17,7 @@ static char *headline(char line, const char *buf, regmatch_t matches[],
 		      size_t nmatch, size_t off);
 static size_t charlen_utf8(const char *s);
 
-void print_regexp_err(int reg_errno, const regex_t *rx)
+static void print_regexp_err(int reg_errno, const regex_t *rx)
 {
 	char *buf = ymalloc(BUF_SZ);
 
