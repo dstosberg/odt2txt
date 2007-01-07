@@ -24,30 +24,9 @@ version 2 as published by the Free Software Foundation
 
 */
 
-char *strcasestr_m(char *hejstack, char *needle)
-{
-int hejlen,neelen;
-int t,r;
-
-  hejlen=strlen(hejstack);
-  neelen=strlen(needle);
-  r=hejlen-neelen;
-
-  for(t=0; t<=r; t++)
-  {
-    if (strncasecmp(&hejstack[t],needle,neelen)==0)
-    { return &hejstack[t]; }
-  }
-
-  return (char *)0;
-}
-
-
 #define BUFFER_SIZE 16738
 
 /* #define _GNU_SOURCE */
-
-char *strcasestr(const char *haystack, const char *needle);
 
 /* These CRC32 functions were taken from the gzip spec and kohninized */
 /*
@@ -323,19 +302,11 @@ long marker;
 
       if ((match_flags&1)==1)
       {
-        if ((match_flags&2)==2)
-        { if (strcmp(compressed_filename,name)==0) break; }
-          else
-        { if (strcasecmp(compressed_filename,name)==0) break; }
+        if (strcmp(compressed_filename,name)==0) break;
       }
         else
       {
-        if ((match_flags&2)==2 || strlen(compressed_filename)==strlen(name))
-        {
-          if (strstr(name,compressed_filename)!=0) break;
-        }
-          else
-        { if (strcasestr_m(name,compressed_filename)!=0) break; }
+        if (strstr(name,compressed_filename)!=0) break;
       }
     }
 
