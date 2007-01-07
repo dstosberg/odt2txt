@@ -100,7 +100,7 @@ int print_binary(int b, int l)
 
 /* These CRC32 functions were taken from the gzip spec and kohninized */
 
-int build_crc32()
+int build_crc32(void)
 {
 unsigned int c;
 int n,k;
@@ -135,7 +135,7 @@ int t;
   return crc;
 }
 
-int kunzip_inflate_init()
+int kunzip_inflate_init(void)
 {
 /*
 int t,r,b,rev_code;
@@ -158,7 +158,7 @@ int t,r,b,rev_code;
   return 0;
 }
 
-int kunzip_inflate_free()
+int kunzip_inflate_free(void)
 {
   if (huffman_tree_len_static!=0)
   { yfree(huffman_tree_len_static); }
@@ -214,7 +214,7 @@ int add_static_codes_to_tree(struct huffman_tree_t *huffman_tree, int code_len, 
 struct huffman_tree_t *curr_huffman_leaf;
 int t,x,r;
 
-  // code_len=code_len-1;
+  /* code_len=code_len-1; */
 
   for (t=0; t<count; t++)
   {

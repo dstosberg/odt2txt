@@ -21,13 +21,13 @@ typedef struct strbuf {
 } STRBUF;
 
 enum strbuf_opt {
-	STRBUF_NULLOK = 1,
+	STRBUF_NULLOK = 1
 };
 
 /*
  * Initialize a new empty string buffer.
  */
-STRBUF *strbuf_new();
+STRBUF *strbuf_new(void);
 
 /*
  * Free a string buffer.

@@ -3,7 +3,7 @@ UNAME_S := $(shell uname -s 2>/dev/null || echo unknown)
 UNAME_O := $(shell uname -o 2>/dev/null || echo unknown)
 
 ifdef DEBUG
-CFLAGS = -O0 -g -Wall -DMEMDEBUG -DSTRBUF_CHECK
+CFLAGS = -O0 -g -Wextra -DMEMDEBUG -DSTRBUF_CHECK
 #LDFLAGS = -lefence
 LDFLAGS += -g
 else

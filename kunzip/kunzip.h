@@ -21,7 +21,7 @@ kunzip_inflate_init - Must be called before any uncompressing is done.
 
 */
 
-int kunzip_inflate_init();
+int kunzip_inflate_init(void);
 
 /*
 
@@ -30,7 +30,7 @@ kunzip_inflate_free - Must be called when kunzip is no longer needed to
 
 */
 
-int kunzip_inflate_free();
+int kunzip_inflate_free(void);
 
 
 STRBUF *kunzip_next_tobuf(char *zip_filename, int offset);

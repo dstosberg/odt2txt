@@ -39,7 +39,7 @@ int regex_subst(STRBUF *buf,
 
 	regex_t rx;
 	const size_t nmatches = 10;
-	regmatch_t matches[nmatches];
+	regmatch_t matches[10];
 
 	r = regcomp(&rx, regex, REG_EXTENDED);
 	if (r) {
@@ -95,7 +95,7 @@ int regex_rm(STRBUF *buf,
 
 char *underline(char linechar, const char *str)
 {
-	int i;
+	size_t i;
 	char *tmp;
 	STRBUF *line;
 	size_t charlen = charlen_utf8(str);
@@ -204,7 +204,7 @@ STRBUF *wrap(STRBUF *buf, int width)
 	}
 
 	strbuf_append_n(out, lf, lflen);
-	while(bufp - strbuf_get(buf) < strbuf_len(buf)) {
+	while(bufp - strbuf_get(buf) < (ptrdiff_t)strbuf_len(buf)) {
 		if (*bufp == ' ')
 			lastspace = bufp;
 		else if (*bufp == '\n') {
@@ -221,7 +221,7 @@ STRBUF *wrap(STRBUF *buf, int width)
 			linelen = 0;
 		}
 
-		if (NULL != lastspace && linelen > width) {
+		if (NULL != lastspace && (int)linelen > width) {
 			strbuf_append_n(out, last, (size_t)(lastspace - last));
 			strbuf_append_n(out, lf, lflen);
 			last = lastspace;

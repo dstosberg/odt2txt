@@ -214,7 +214,7 @@ long marker;
       inflate_tobuf(in, out, (unsigned int*)&checksum);
     }
 
-  if (checksum!=local_file_header.crc_32 && local_file_header.crc_32 != 0)
+  if ((unsigned int)checksum!=local_file_header.crc_32 && local_file_header.crc_32 != 0)
     {
       printf("Checksums don't match: %d %d\n",checksum,local_file_header.crc_32);
       ret_code=-4;
