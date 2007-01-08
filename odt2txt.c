@@ -486,8 +486,6 @@ int main(int argc, const char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	(void)kunzip_inflate_init();
-
 	/* check mimetype */
 	mimetype = read_from_zip(opt_filename, "mimetype");
 
@@ -506,7 +504,6 @@ int main(int argc, const char **argv)
 
 	/* read content.xml */
 	docbuf = read_from_zip(opt_filename, "content.xml");
-	(void)kunzip_inflate_free();
 
 	if (!opt_raw) {
 		subst_doc(ic, docbuf);

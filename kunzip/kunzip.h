@@ -14,25 +14,6 @@ http://www.mikekohn.net/
 
 */
 
-/*
-
-kunzip_inflate_init - Must be called before any uncompressing is done.
-                      Only needs to be called once. 
-
-*/
-
-int kunzip_inflate_init(void);
-
-/*
-
-kunzip_inflate_free - Must be called when kunzip is no longer needed to
-                      free buffers and such.
-
-*/
-
-int kunzip_inflate_free(void);
-
-
 STRBUF *kunzip_next_tobuf(char *zip_filename, int offset);
 
 /*

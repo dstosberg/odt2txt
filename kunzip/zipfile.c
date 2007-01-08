@@ -9,7 +9,6 @@
 
 #include "fileio.h"
 #include "zipfile.h"
-#include "kinflate.h"
 #include "kunzip.h"
 #include "../strbuf.h"
 #include "../mem.h"
@@ -28,63 +27,13 @@ version 2 as published by the Free Software Foundation
 
 /* #define _GNU_SOURCE */
 
-/* These CRC32 functions were taken from the gzip spec and kohninized */
-/*
-
-int crc_built=0;
-unsigned int crc_table[256];
-
-int build_crc32()
-{
-unsigned int c;
-int n,k;
-
-  for (n=0; n<256; n++)
-  {
-    c=(unsigned int)n;
-    for (k=0; k<8; k++)
-    {
-      if (c&1)
-      { c=0xedb88320^(c>>1); }
-        else
-      { c=c>>1; }
-    }
-    crc_table[n]=c;
-  }
-
-  crc_built=1;
-
-  return 0;
-}
-
-unsigned int crc32(FILE *in)
-{
-unsigned int crc;
-int ch;
-
-  if (crc_built==0) build_crc32();
-
-  crc=0xffffffff;
-
-  while(1)
-  {
-    ch=getc(in);
-    if (ch==EOF) break;
-
-    crc=crc_table[(crc^ch)&0xff]^(crc>>8);
-  }
-
-  return crc^0xffffffff;
-}
-*/
-
 unsigned int copy_file_tobuf(FILE *in, STRBUF *out, int len)
 {
 unsigned char buffer[BUFFER_SIZE];
-unsigned int checksum;
+uLong checksum;
 int t,r;
 
-  checksum=0xffffffff;
+  checksum=crc32(0L, Z_NULL, 0);
 
   t=0;
 
@@ -97,11 +46,11 @@ int t,r;
 
     read_buffer(in,buffer,r);
     strbuf_append_n(out,(char*)buffer,r);
-    checksum=crc32(buffer,r,checksum);
+    checksum=crc32(checksum, buffer, r);
     t=t+r;
   }
 
-  return checksum^0xffffffff;
+  return checksum;
 }
 
 int read_zip_header(FILE *in, struct zip_local_file_header_t *local_file_header)
@@ -209,14 +158,20 @@ long marker;
     {
       checksum=copy_file_tobuf(in,out,local_file_header.uncompressed_size);
     }
+  else if (local_file_header.compression_method==Z_DEFLATED)
+    {
+	strbuf_append_inflate(out, in);
+    }
   else
     {
-      inflate_tobuf(in, out, (unsigned int*)&checksum);
+	fprintf(stderr, "Unknown compression method\n");
+	exit(EXIT_FAILURE);
     }
 
   if ((unsigned int)checksum!=local_file_header.crc_32 && local_file_header.crc_32 != 0)
     {
-      printf("Checksums don't match: %d %d\n",checksum,local_file_header.crc_32);
+      fprintf(stderr, "Warning: Checksum does not match: %d %d.\nPossibly the file"
+	      " is corrupted otr truncated.\n", checksum, local_file_header.crc_32);
       ret_code=-4;
     }
 

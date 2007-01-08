@@ -156,10 +156,98 @@ int strbuf_subst(STRBUF *buf,
 	return diff;
 }
 
-static void strbuf_grow(STRBUF *buf)
+size_t strbuf_append_inflate(STRBUF *buf, FILE *in)
 {
+	size_t len = 0;
+	z_stream strm;
+	Bytef readbuf[1024];
+	int z_ret;
+	int nullok;
+
 	strbuf_check(buf);
 
+	/* save NULLOK flag */
+	nullok = (buf->opt & STRBUF_NULLOK) ? 1 : 0;
+	strbuf_setopt(buf, STRBUF_NULLOK);
+
+	/* zlib init */
+	strm.zalloc   = Z_NULL;
+	strm.zfree    = Z_NULL;
+	strm.opaque   = Z_NULL;
+	strm.next_in  = Z_NULL;
+	strm.avail_in = 0;
+
+	z_ret = inflateInit2(&strm, -15);
+	if (z_ret != Z_OK) {
+		fprintf(stderr, "A: zlib returned error: %d\n", z_ret);
+		exit(EXIT_FAILURE);
+	}
+
+	do {
+		int f_err;
+
+		strm.avail_in = (uInt)fread(readbuf, 1, sizeof(readbuf), in);
+
+		f_err = ferror(in);
+		if (f_err) {
+			(void)inflateEnd(&strm);
+			fprintf(stderr, "stdio error: %d\n", f_err);
+			exit(EXIT_FAILURE); /* TODO: errmsg? continue? */
+		}
+
+		if (strm.avail_in == 0)
+			break;
+
+		strm.next_in = readbuf;
+		do {
+			size_t bytes_inflated;
+
+			while (buf->buf_sz < buf->len + sizeof(readbuf) * 2)
+				strbuf_grow(buf);
+
+			strm.next_out  = (Bytef*)(buf->data + buf->len);
+			strm.avail_out = (uInt)(buf->buf_sz - buf->len);
+
+			z_ret = inflate(&strm, Z_SYNC_FLUSH);
+			switch (z_ret) {
+			case Z_NEED_DICT:
+			case Z_DATA_ERROR:
+			case Z_MEM_ERROR:
+				(void)inflateEnd(&strm);
+				fprintf(stderr, "B: zlib returned error: %d\n", z_ret);
+				exit(EXIT_FAILURE);
+			}
+
+			bytes_inflated  = (buf->buf_sz - buf->len) - strm.avail_out;
+			buf->len       += bytes_inflated;
+
+		} while (strm.avail_out == 0);
+
+	} while (z_ret != Z_STREAM_END);
+
+	/* terminate buffer */
+	if (buf->len + 1 > buf->buf_sz)
+		strbuf_grow(buf);
+	*(buf->data + buf->len) = '\0';
+
+	/* restore NULLOK option */
+	if (!nullok)
+		strbuf_unsetopt(buf, STRBUF_NULLOK);
+
+	strbuf_check(buf);
+
+	(void)inflateEnd(&strm);
+
+	if (z_ret != Z_STREAM_END) {
+		fprintf(stderr, "ERR\n");
+		exit(EXIT_FAILURE);
+	}
+
+	return len;
+}
+
+static void strbuf_grow(STRBUF *buf)
+{
 	buf->buf_sz += strbuf_grow_sz;
 	buf->data = yrealloc(buf->data, buf->buf_sz);
 
@@ -200,4 +288,9 @@ char *strbuf_spit(STRBUF *buf)
 void strbuf_setopt(STRBUF *buf, enum strbuf_opt opt)
 {
 	buf->opt |= opt;
+}
+
+void strbuf_unsetopt(STRBUF *buf, enum strbuf_opt opt)
+{
+	buf->opt &= ~opt;
 }

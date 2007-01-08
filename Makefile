@@ -10,9 +10,10 @@ else
 CFLAGS = -O2
 endif
 
-KUNZIP_OBJS = kunzip/fileio.o kunzip/zipfile.o kunzip/kinflate.o
+KUNZIP_OBJS = kunzip/fileio.o kunzip/zipfile.o
 OBJ = odt2txt.o regex.o mem.o strbuf.o $(KUNZIP_OBJS)
 TEST_OBJ = t/test-strbuf.o t/test-regex.o
+LIBS = -lz
 ALL_OBJ = $(OBJ) $(TEST_OBJ)
 
 ifeq ($(UNAME_S),FreeBSD)
