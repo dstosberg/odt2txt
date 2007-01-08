@@ -161,6 +161,7 @@ long marker;
   else if (local_file_header.compression_method==Z_DEFLATED)
     {
 	strbuf_append_inflate(out, in);
+	checksum = strbuf_crc32(out);
     }
   else
     {

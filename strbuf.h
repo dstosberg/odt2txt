@@ -107,5 +107,10 @@ void strbuf_setopt(STRBUF *buf, enum strbuf_opt opt);
  */
 void strbuf_unsetopt(STRBUF *buf, enum strbuf_opt opt);
 
+/*
+ * Return the crc32 checksum of the buffer content.
+ */
+unsigned int strbuf_crc32(STRBUF *buf);
+
 #endif /* STRBUF_H */
 

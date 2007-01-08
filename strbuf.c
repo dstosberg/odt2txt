@@ -285,6 +285,14 @@ char *strbuf_spit(STRBUF *buf)
 	return data;
 }
 
+unsigned int strbuf_crc32(STRBUF *buf)
+{
+	uLong crc = crc32(0L, Z_NULL, 0);
+	crc = crc32(crc, buf->data, buf->len);
+
+	return (unsigned int)crc;
+}
+
 void strbuf_setopt(STRBUF *buf, enum strbuf_opt opt)
 {
 	buf->opt |= opt;
