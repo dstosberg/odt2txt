@@ -48,7 +48,8 @@ Examples:
 
 */
 
-int kunzip_get_offset_by_name(char *zip_filename, char *compressed_filename, int match_flags, int skip_offset);
+int kunzip_get_offset_by_name(char *zip_filename, char *compressed_filename,
+			      int match_flags, int skip_offset);
 
 /*
 
@@ -63,4 +64,3 @@ Example:
 */
 
 int kunzip_get_version(char *version_string);
-
