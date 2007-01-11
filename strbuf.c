@@ -288,7 +288,7 @@ char *strbuf_spit(STRBUF *buf)
 unsigned int strbuf_crc32(STRBUF *buf)
 {
 	uLong crc = crc32(0L, Z_NULL, 0);
-	crc = crc32(crc, buf->data, buf->len);
+	crc = crc32(crc, (Bytef *)buf->data, buf->len);
 
 	return (unsigned int)crc;
 }
