@@ -158,7 +158,7 @@ int strbuf_subst(STRBUF *buf,
 
 size_t strbuf_append_inflate(STRBUF *buf, FILE *in)
 {
-	size_t len = 0;
+	size_t len;
 	z_stream strm;
 	Bytef readbuf[1024];
 	int z_ret;
@@ -236,6 +236,7 @@ size_t strbuf_append_inflate(STRBUF *buf, FILE *in)
 
 	strbuf_check(buf);
 
+	len = (size_t)strm.total_out;
 	(void)inflateEnd(&strm);
 
 	if (z_ret != Z_STREAM_END) {

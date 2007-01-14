@@ -173,7 +173,7 @@ STRBUF *kunzip_file_tobuf(FILE *in)
 			copy_file_tobuf(in, out,
 					local_file_header.uncompressed_size);
 	} else if (local_file_header.compression_method == Z_DEFLATED) {
-		strbuf_append_inflate(out, in);
+		(void)strbuf_append_inflate(out, in);
 		checksum = strbuf_crc32(out);
 	} else {
 		fprintf(stderr, "Unknown compression method\n");
