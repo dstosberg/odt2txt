@@ -1,0 +1,65 @@
+.TH ODT2TXT "1" "2007-01-14" "odt2txt 0.3" "User Commands"
+.SH NAME
+odt2txt \- a simple converter from OpenDocument Text to plain text
+.SH SYNOPSIS
+.B odt2txt
+[OPTIONS] FILENAME
+.SH DESCRIPTION
+odt2txt is a command-line tool which extracts the text out of
+OpenDocument Texts, as produced by OpenOffice.org, KOffice,
+StarOffice and others.
+.PP
+The FILENAME argument is mandatory.
+.SH OPTIONS
+.TP
+\fB\-\-width\fR=\fIWIDTH\fR
+Wrap text lines after \fIWIDTH\fR characters. The default value is
+\fI65\fR, which means that any words which would extend beyond
+column \fI65\fR are moved to a new line.
+.IP
+If \fIWIDTH\fR is set to \fI\-1\fR then no lines will be broken
+.TP
+\fB\-\-output\fR=\fIFILE\fR
+Write output to \fIFILE\fR and not to standard output.
+.TP
+\fB\-\-subst\fR=\fISUBST\fR
+Select which non\-ascii characters shall be replaced by ascii
+look\-a\-likes. Valid values for \fISUBST\fR are \fIall\fR,
+\fIsome\fR and \fInone\fR.
+.IP
+\fB\-\-subst\fR=\fIall\fR
+Substitute all characters for which substitutions are known
+.IP
+\fB\-\-subst\fR=\fIsome\fR
+Substitute all characters which the output charset does not contain
+This is the default
+.IP
+\fB\-\-subst\fR=\fInone\fR
+Substitute no characters
+.TP
+\fB\-\-encoding\fR=\fIX\fR
+Do not try to autodetect the terminal encoding, but convert the
+document to encoding \fIX\fR unconditionally To find out, which terminal
+encoding will be used in automatic mode, use
+\fB\-\-encoding\fR=\fIshow\fR
+.TP
+\fB\-\-force\fR
+Do not stop if the mimetype if unknown.
+.TP
+\fB\-\-raw\fR
+Print raw XML
+.TP
+\fB\-\-version\fR
+Show version and copyright information
+.SH COPYRIGHT
+Copyright \(co 2006,2007 Dennis Stosberg <dennis@stosberg.net>
+.br
+Uses parts of the kunzip library, Copyright 2005,2006 by Michael Kohn
+.PP
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License,
+version 2 as published by the Free Software Foundation
+.SH SEE ALSO
+.TP
+\fBHomepage\fR
+http://stosberg.net/odt2txt/
