@@ -16,6 +16,15 @@ TEST_OBJ = t/test-strbuf.o t/test-regex.o
 LIBS = -lz
 ALL_OBJ = $(OBJ) $(TEST_OBJ)
 
+INSTALL = install
+GROFF   = groff
+
+DESTDIR = /usr/local
+PREFIX  =
+BINDIR  = $(PREFIX)/bin
+MANDIR  = $(PREFIX)/share/man
+MAN1DIR = $(MANDIR)/man1
+
 ifeq ($(UNAME_S),FreeBSD)
 	CFLAGS += -DICONV_CHAR="const char" -I/usr/local/include
 	LDFLAGS += -L/usr/local/lib
@@ -56,6 +65,7 @@ ifneq ($(MINGW32),)
 endif
 
 BIN = odt2txt$(EXT)
+MAN = odt2txt.1
 
 $(BIN): $(OBJ)
 	$(CC) -o $@ $(LDFLAGS) $(OBJ) $(LIBS)
@@ -67,8 +77,20 @@ $(ALL_OBJ): Makefile
 
 all: $(BIN)
 
+install: $(BIN) $(MAN)
+	$(INSTALL) -d -m755 $(DESTDIR)$(BINDIR)
+	$(INSTALL) $(BIN) $(DESTDIR)$(BINDIR)
+	$(INSTALL) -d -m755 $(DESTDIR)$(MAN1DIR)
+	$(INSTALL) $(MAN) $(DESTDIR)$(MAN1DIR)
+
+odt2txt.html: $(MAN)
+	$(GROFF) -Thtml -man $(MAN) > $@
+
+odt2txt.ps: $(MAN)
+	$(GROFF) -Tps -man $(MAN) > $@
+
 clean:
-	rm -fr $(OBJ) $(BIN)
+	rm -fr $(OBJ) $(BIN) odt2txt.ps odt2txt.html
 
 .PHONY: clean
 
