@@ -13,72 +13,69 @@ version 2 as published by the Free Software Foundation
 
 int read_int(FILE *in)
 {
-int c;
+	int c;
 
-  c=getc(in);
-  c=c|(getc(in)<<8);
-  c=c|(getc(in)<<16);
-  c=c|(getc(in)<<24);
+	c = getc(in);
+	c = c | (getc(in) << 8);
+	c = c | (getc(in) << 16);
+	c = c | (getc(in) << 24);
 
-  return c;
+	return c;
 }
 
 int read_word(FILE *in)
 {
-int c;
+	int c;
 
-  c=getc(in);
-  c=c|(getc(in)<<8);
+	c = getc(in);
+	c = c | (getc(in) << 8);
 
-  return c;
+	return c;
 }
 
 int read_chars(FILE *in, char *s, int count)
 {
-int t;
+	int t;
 
-  for (t=0; t<count; t++)
-  {
-    s[t]=getc(in);
-  }
+	for (t = 0; t < count; t++) {
+		s[t] = getc(in);
+	}
 
-  s[t]=0;
+	s[t] = 0;
 
-  return 0;
+	return 0;
 }
 
 int read_int_b(FILE *in)
 {
-int c;
+	int c;
 
-  c=getc(in);
-  c=(c<<8)+getc(in);
-  c=(c<<8)+getc(in);
-  c=(c<<8)+getc(in);
+	c = getc(in);
+	c = (c << 8) + getc(in);
+	c = (c << 8) + getc(in);
+	c = (c << 8) + getc(in);
 
-  return c;
+	return c;
 }
 
 int read_word_b(FILE *in)
 {
-int c;
+	int c;
 
-  c=getc(in);
-  c=(c<<8)+getc(in);
+	c = getc(in);
+	c = (c << 8) + getc(in);
 
-  return c;
+	return c;
 }
 
 int read_buffer(FILE *in, unsigned char *buffer, int len)
 {
-int t;
+	int t;
 
-  t=0;
-  while (t<len)
-  {
-    t=t+fread(buffer+t,1,len-t,in);
-  }
+	t = 0;
+	while (t < len) {
+		t = t + fread(buffer + t, 1, len - t, in);
+	}
 
-  return t;
+	return t;
 }
-
