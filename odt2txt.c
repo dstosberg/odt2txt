@@ -511,6 +511,10 @@ int main(int argc, const char **argv)
 	}
 
 	wbuf = wrap(docbuf, opt_width);
+
+	/* remove all trailing whitespace */
+	(void) regex_subst(wbuf, " +\n", _REG_GLOBAL, "\n");
+
 	outbuf = conv(ic, wbuf);
 
 	if (opt_output)
