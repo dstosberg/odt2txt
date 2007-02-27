@@ -40,10 +40,10 @@ ifeq ($(UNAME_S),NetBSD)
 endif
 ifeq ($(UNAME_S),SunOS)
 	ifeq ($(CC),cc)
-		ifdef RELEASE
-			CFLAGS = -xO3
-		else
+		ifdef DEBUG
 			CFLAGS = -v -g -DMEMDEBUG -DSTRBUF_CHECK
+		else
+			CFLAGS = -xO3
 		endif
 	endif
 	CFLAGS += -DICONV_CHAR="const char"
