@@ -54,10 +54,11 @@ ifeq ($(UNAME_O),Cygwin)
 	EXT = .exe
 endif
 ifneq ($(MINGW32),)
-	CFLAGS += -DICONV_CHAR="const char" -I$(REGEX_DIR)
-	LIBS += $(REGEX_DIR)/regex.o
+	CFLAGS += -DICONV_CHAR="const char" -I$(REGEX_DIR) -I$(ZLIB_DIR)
+	LIBS = $(REGEX_DIR)/regex.o
 	ifdef STATIC
 		LIBS += $(wildcard $(ICONV_DIR)/lib/.libs/*.o)
+		LIBS += $(ZLIB_DIR)/zlib.a
 	else
 		LIBS += -liconv
 	endif
