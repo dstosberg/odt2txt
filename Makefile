@@ -48,6 +48,10 @@ ifeq ($(UNAME_S),SunOS)
 	endif
 	CFLAGS += -DICONV_CHAR="const char"
 endif
+ifeq ($(UNAME_S),HP-UX)
+	CFLAGS += -I$(ZLIB_DIR)
+	LIBS = $(ZLIB_DIR)/libz.a
+endif
 ifeq ($(UNAME_O),Cygwin)
 	CFLAGS += -DICONV_CHAR="const char"
 	LIBS += -liconv

@@ -478,7 +478,7 @@ int main(int argc, const char **argv)
 		opt_encoding = guess_encoding();
 	}
 
-	ic = init_conv("utf-8", opt_encoding);
+	ic = init_conv("UTF-8", opt_encoding);
 
 	if (0 != stat(opt_filename, &st)) {
 		fprintf(stderr, "%s: %s\n",

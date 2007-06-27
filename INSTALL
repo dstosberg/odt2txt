@@ -2,8 +2,8 @@
 odt2txt is known to compile on Linux, Windows (Cygwin and native),
 Solaris, FreeBSD, OpenBSD and NetBSD.
 
-To build odt2txt you need GNU make on all platforms.  On Solaris
-and the BSDs, it is usually called "gmake".
+To build odt2txt you need GNU make on all platforms.  On platforms
+other than Linux and Cygwin, it is usually called "gmake".
 
 Linux:
 	A modern Linux system has everything you need in the
@@ -23,6 +23,10 @@ FreeBSD/OpenBSD:
 NetBSD:
 	NetBSD > 2.0 comes with an iconv implementation, it has everything
 	you need.
+
+HP-UX:
+        If zlib is not already installed on the system, build it.  Then
+        build odt2txt with "gmake ZLIB_DIR=/path/to/zlib"
 
 Windows (Cygwin):
 	You need to install libiconv.
