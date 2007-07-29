@@ -10,6 +10,10 @@ else
 CFLAGS = -O2
 endif
 
+ifdef NO_ICONV
+CFLAGS += -DNO_ICONV
+endif
+
 KUNZIP_OBJS = kunzip/fileio.o kunzip/zipfile.o
 OBJ = odt2txt.o regex.o mem.o strbuf.o $(KUNZIP_OBJS)
 TEST_OBJ = t/test-strbuf.o t/test-regex.o
