@@ -44,7 +44,6 @@ static int opt_raw;
 static char *opt_encoding;
 static int opt_width = 63;
 static const char *opt_filename;
-static int opt_force;
 static char *opt_output;
 
 #define SUBST_NONE 0
@@ -132,7 +131,7 @@ static struct subst substs[] = {
 static void usage(void)
 {
 	printf("odt2txt %s\n"
-	       "Converts an OpenDocument Text to raw text.\n\n"
+	       "Converts an OpenDocument or OpenOffice.org XML File to raw text.\n\n"
 	       "Syntax:   odt2txt [options] filename\n\n"
 	       "Options:  --raw         Print raw XML\n"
 #ifdef NO_ICONV
@@ -159,7 +158,6 @@ static void usage(void)
 	       "                                         output charset does not contain\n"
 	       "                                         This is the default\n"
 	       "                           --subst=none  Substitute no characters\n"
-	       "          --force       Do not stop if the mimetype if unknown\n"
 	       "          --version     Show version and copyright information\n",
 	       VERSION);
 	exit(EXIT_FAILURE);
@@ -437,7 +435,6 @@ int main(int argc, const char **argv)
 	STRBUF *wbuf;
 	STRBUF *docbuf;
 	STRBUF *outbuf;
-	STRBUF *mimetype;
 	int i = 1;
 
 	(void)setlocale(LC_ALL, "");
@@ -465,7 +462,7 @@ int main(int argc, const char **argv)
 			}
 			i++; continue;
 		} else if (!strcmp(argv[i], "--force")) {
-			opt_force = 1;
+			// ignore this setting
 			i++; continue;
 		} else if (!strncmp(argv[i], "--output=", 9)) {
 			if (*(argv[i] + 9) != '-') {
@@ -527,22 +524,6 @@ int main(int argc, const char **argv)
 			opt_filename, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
-
-	/* check mimetype */
-	mimetype = read_from_zip(opt_filename, "mimetype");
-
-	if (0 == strcmp("application/vnd.oasis.opendocument.text",
-			strbuf_get(mimetype))
-	    && 0 == strcmp("application/vnd.sun.xml.writer",
-			   strbuf_get(mimetype))
-	    && !opt_force) {
-		fprintf(stderr, "Document has unknown mimetype: -%s-\n",
-			strbuf_get(mimetype));
-		fprintf(stderr, "Won't continue without --force.\n");
-		strbuf_free(mimetype);
-		exit(EXIT_FAILURE);
-	}
-	strbuf_free(mimetype);
 
 	/* read content.xml */
 	docbuf = read_from_zip(opt_filename, "content.xml");
