@@ -2,7 +2,7 @@
  * odt2txt.c: A simple (and stupid) converter from OpenDocument Text
  *            to plain text.
  *
- * Copyright (c) 2006,2007 Dennis Stosberg <dennis@stosberg.net>
+ * Copyright (c) 2006-2008 Dennis Stosberg <dennis@stosberg.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License,
