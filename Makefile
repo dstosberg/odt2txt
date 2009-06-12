@@ -39,6 +39,11 @@ ifeq ($(UNAME_S),OpenBSD)
 	LDFLAGS += -L/usr/local/lib
 	LIBS += -liconv
 endif
+ifeq ($(UNAME_S),Darwin)
+       CFLAGS += -I/opt/local/include
+       LDFLAGS += -L/opt/local/lib
+       LIBS += -liconv
+endif
 ifeq ($(UNAME_S),NetBSD)
 	CFLAGS += -DICONV_CHAR="const char"
 endif

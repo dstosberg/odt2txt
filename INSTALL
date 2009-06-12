@@ -20,6 +20,15 @@ FreeBSD/OpenBSD:
 	The regex library that comes with FreeBSD is extremely slow
 	on my FreeBSD system (5.3, i386).
 
+Mac OS X:
+	libiconv has to be installed separately. The Makefile contains
+	support for a MacPorts installation:
+
+	- install MacPorts http://www.macports.org/
+	- install libiconv in MacPorts
+	  $ sudo port install libiconv
+	- run "make" in the source directory
+
 NetBSD:
 	NetBSD > 2.0 comes with an iconv implementation, it has everything
 	you need.
