@@ -36,7 +36,11 @@
 #include "mem.h"
 #include "regex.h"
 #include "strbuf.h"
-#include "kunzip/kunzip.h"
+#ifdef HAVE_LIBZIP
+#  include <zip.h>
+#else
+#  include "kunzip/kunzip.h"
+#endif
 
 #define VERSION "0.4"
 
@@ -167,7 +171,9 @@ static void version_info(void)
 {
 	printf("odt2txt %s\n"
 	       "Copyright (c) 2006,2007 Dennis Stosberg <dennis@stosberg.net>\n"
+#ifndef HAVE_LIBZIP
 	       "Uses the kunzip library, Copyright 2005,2006 by Michael Kohn\n"
+#endif
 	       "\n"
 	       "This program is free software; you can redistribute it and/or\n"
 	       "modify it under the terms of the GNU General Public License,\n"
@@ -375,10 +381,29 @@ static char *guess_encoding(void)
 
 static STRBUF *read_from_zip(const char *zipfile, const char *filename)
 {
-	int r;
-	STRBUF *content;
+	int r = 0;
+	STRBUF *content = NULL;
 
+#ifdef HAVE_LIBZIP
+	int zip_error;
+	struct zip *zip = NULL;
+	struct zip_stat stat;
+	struct zip_file *unzipped = NULL;
+	char *buf = NULL;
+
+	if ( !(zip = zip_open(zipfile, 0, &zip_error)) ||
+	     (r = zip_name_locate(zip, filename, 0)) < 0 ||
+	     (zip_stat_index(zip, r, ZIP_FL_UNCHANGED, &stat) < 0) ||
+	     !(unzipped = zip_fopen_index(zip, r, ZIP_FL_UNCHANGED)) ) {
+		if (unzipped)
+			zip_fclose(unzipped);
+		if (zip)
+			zip_close(zip);
+		r = -1;
+	}
+#else
 	r = kunzip_get_offset_by_name((char*)zipfile, (char*)filename, 3, -1);
+#endif
 
 	if(-1 == r) {
 		fprintf(stderr,
@@ -386,7 +411,19 @@ static STRBUF *read_from_zip(const char *zipfile, const char *filename)
 		exit(EXIT_FAILURE);
 	}
 
+#ifdef HAVE_LIBZIP
+	if ( !(buf = ymalloc(stat.size + 1)) ||
+	     (zip_fread(unzipped, buf, stat.size) != stat.size) ||
+	     !(content = strbuf_slurp_n(buf, stat.size)) ) {
+		if (buf)
+			yfree(buf);
+		content = NULL;
+	}
+	zip_fclose(unzipped);
+	zip_close(zip);
+#else
 	content = kunzip_next_tobuf((char*)zipfile, r);
+#endif
 
 	if (!content) {
 		fprintf(stderr,

@@ -14,10 +14,17 @@ ifdef NO_ICONV
 CFLAGS += -DNO_ICONV
 endif
 
-KUNZIP_OBJS = kunzip/fileio.o kunzip/zipfile.o
-OBJ = odt2txt.o regex.o mem.o strbuf.o $(KUNZIP_OBJS)
-TEST_OBJ = t/test-strbuf.o t/test-regex.o
 LIBS = -lz
+ZIP_OBJS =
+ifdef HAVE_LIBZIP
+	CFLAGS += -DHAVE_LIBZIP
+	LIBS += -lzip
+else
+	ZIP_OBJS = kunzip/fileio.o kunzip/zipfile.o
+endif
+
+OBJ = odt2txt.o regex.o mem.o strbuf.o $(ZIP_OBJS)
+TEST_OBJ = t/test-strbuf.o t/test-regex.o
 ALL_OBJ = $(OBJ) $(TEST_OBJ)
 
 INSTALL = install
