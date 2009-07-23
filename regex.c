@@ -187,7 +187,7 @@ static size_t charlen_utf8(const char *s)
 
 STRBUF *wrap(STRBUF *buf, int width)
 {
-	const char *lf = "\n  ";
+	const char *lf = "\n";
 	const size_t lflen = strlen(lf);
 	const char *bufp;
 	const char *last;
