@@ -53,7 +53,14 @@ int regex_subst(STRBUF *buf,
 
 		bufp = strbuf_get(buf) + off;
 
+#ifdef REG_STARTEND
+		matches[0].rm_so = 0;
+		matches[0].rm_eo = strbuf_len(buf) - off;
+
+		if (0 != regexec(&rx, bufp, nmatches, matches, REG_STARTEND))
+#else
 		if (0 != regexec(&rx, bufp, nmatches, matches, 0))
+#endif
 			break;
 
 		if (matches[i].rm_so != -1) {
