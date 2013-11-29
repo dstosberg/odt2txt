@@ -179,7 +179,7 @@ static void version_info(void)
 	       "modify it under the terms of the GNU General Public License,\n"
 	       "version 2 as published by the Free Software Foundation\n"
 	       "\n"
-	       "Homepage: http://stosberg.net/odt2txt/\n",
+	       "https://github.com/dstosberg/odt2txt\n",
 	       VERSION);
 	exit(EXIT_SUCCESS);
 }
