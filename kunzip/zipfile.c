@@ -141,11 +141,8 @@ STRBUF *kunzip_file_tobuf(FILE *in)
 {
 	STRBUF *out;
 	struct zip_local_file_header_t local_file_header;
-	int ret_code;
 	int checksum;
 	long marker;
-
-	ret_code = 0;
 
 	if (read_zip_header(in, &local_file_header) == -1)
 		return NULL;
@@ -186,7 +183,6 @@ STRBUF *kunzip_file_tobuf(FILE *in)
 			"Warning: Checksum does not match: %d %d.\nPossibly the file"
 			" is corrupted otr truncated.\n", checksum,
 			local_file_header.crc_32);
-		ret_code = -4;
 	}
 
 	yfree(local_file_header.file_name);
@@ -207,7 +203,6 @@ STRBUF *kunzip_next_tobuf(char *zip_filename, int offset)
 {
 	FILE *in;
 	STRBUF *buf;
-	long marker;
 
 	in = fopen(zip_filename, "rb");
 	if (in == 0) {
@@ -217,7 +212,6 @@ STRBUF *kunzip_next_tobuf(char *zip_filename, int offset)
 	fseek(in, offset, SEEK_SET);
 
 	buf = kunzip_file_tobuf(in);
-	marker = ftell(in);
 	fclose(in);
 
 	return buf;
