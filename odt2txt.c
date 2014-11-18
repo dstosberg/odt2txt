@@ -42,7 +42,7 @@
 #  include "kunzip/kunzip.h"
 #endif
 
-#define VERSION "0.4"
+#define VERSION "0.5"
 
 static int opt_raw;
 static char *opt_encoding;
