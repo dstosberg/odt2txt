@@ -45,6 +45,7 @@
 #define VERSION "0.5"
 
 static int opt_raw;
+static int opt_raw_input = 0;
 static char *opt_encoding;
 static int opt_width = 63;
 static const char *opt_filename;
@@ -138,6 +139,7 @@ static void usage(void)
 	       "Converts an OpenDocument or OpenOffice.org XML File to raw text.\n\n"
 	       "Syntax:   odt2txt [options] filename\n\n"
 	       "Options:  --raw         Print raw XML\n"
+	       "          --raw-input   Input file is a raw XML (fodt, fods, ...)\n"
 #ifdef NO_ICONV
 	       "          --encoding=X  Ignored. odt2txt has been built without iconv support.\n"
 	       "                        Output will always be encoded in UTF-8\n"
@@ -435,10 +437,33 @@ static STRBUF *read_from_zip(const char *zipfile, const char *filename)
 	return content;
 }
 
-static void format_doc(STRBUF *buf)
+static STRBUF *read_from_xml(const char *zipfile, const char *filename)
+{
+
+	FILE *in = fopen(zipfile, "rb");
+	if (in == 0) {
+		fprintf(stderr, "Can't open %s.\n", filename);
+		exit(EXIT_FAILURE);
+	}
+
+	STRBUF *content = strbuf_new();
+
+	strbuf_append_file(content, in);
+
+	fclose(in);
+
+	return content;
+}
+
+static void format_doc(STRBUF *buf, int raw_input)
 {
 	/* FIXME: Convert buffer to utf-8 first.  Are there
 	   OpenOffice texts which are not utf8-encoded? */
+
+	if (raw_input) {
+		RS_O(".*<office:body>", "<office:body>");                   /* only body */
+		RS_G("<office:binary-data>[^>]*</office:binary-data>", ""); /* remove binary */
+	}
 
 	/* headline, first level */
 	RS_E("<text:h[^>]*outline-level=\"1\"[^>]*>([^<]*)<[^>]*>", &h1);
@@ -451,7 +476,8 @@ static void format_doc(STRBUF *buf)
 	/* images */
 	RS_E("<draw:frame[^>]*draw:name=\"([^\"]*)\"[^>]*>", &image);
 
-	RS_G("<[^>]*>", ""); 	 /* replace all remaining tags */
+
+	RS_G("<[^>]*>", "");     /* replace all remaining tags */
 	RS_G("\n +", "\n");      /* remove indentations, e.g. kword */
 	RS_G("\n{3,}", "\n\n");  /* remove large vertical spaces */
 
@@ -479,6 +505,9 @@ int main(int argc, const char **argv)
 	while (argv[i]) {
 		if (!strcmp(argv[i], "--raw")) {
 			opt_raw = 1;
+			i++; continue;
+		} else if (!strcmp(argv[i], "--raw-input")) {
+			opt_raw_input = 1;
 			i++; continue;
 		} else if (!strncmp(argv[i], "--encoding=", 11)) {
 			size_t arglen = strlen(argv[i]) - 10;
@@ -563,11 +592,13 @@ int main(int argc, const char **argv)
 	}
 
 	/* read content.xml */
-	docbuf = read_from_zip(opt_filename, "content.xml");
+	docbuf = opt_raw_input ?
+		read_from_xml(opt_filename, "content.xml") :
+		read_from_zip(opt_filename, "content.xml");
 
 	if (!opt_raw) {
 		subst_doc(ic, docbuf);
-		format_doc(docbuf);
+		format_doc(docbuf, opt_raw_input);
 	}
 
 	wbuf = wrap(docbuf, opt_width);

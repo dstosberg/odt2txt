@@ -156,6 +156,46 @@ int strbuf_subst(STRBUF *buf,
 	return diff;
 }
 
+size_t strbuf_append_file(STRBUF *buf, FILE *in)
+{
+	strbuf_check(buf);
+
+	/* save NULLOK flag */
+	int nullok = (buf->opt & STRBUF_NULLOK) ? 1 : 0;
+	strbuf_setopt(buf, STRBUF_NULLOK);
+
+
+	size_t len = 0;
+	size_t read_len = 0;
+	char readbuf[1024];
+	do {
+		read_len = fread(readbuf, 1, sizeof(readbuf), in);
+		len += read_len;
+
+		if (read_len > 0) {
+			while (buf->buf_sz < buf->len + sizeof(readbuf))
+				strbuf_grow(buf);
+
+			memcpy(buf->data + buf->len, readbuf, read_len);
+			buf->len += read_len;
+		}
+
+	} while (read_len == sizeof(readbuf));
+
+	/* terminate buffer */
+	if (buf->len + 1 > buf->buf_sz)
+		strbuf_grow(buf);
+	*(buf->data + buf->len) = '\0';
+
+	/* restore NULLOK option */
+	if (!nullok)
+		strbuf_unsetopt(buf, STRBUF_NULLOK);
+
+	strbuf_check(buf);
+
+	return len;
+}
+
 size_t strbuf_append_inflate(STRBUF *buf, FILE *in)
 {
 	size_t len;
