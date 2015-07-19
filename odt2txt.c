@@ -413,7 +413,7 @@ static STRBUF *read_from_zip(const char *zipfile, const char *filename)
 
 #ifdef HAVE_LIBZIP
 	if ( !(buf = ymalloc(stat.size + 1)) ||
-	     (zip_fread(unzipped, buf, stat.size) != stat.size) ||
+	     ((zip_uint64_t)zip_fread(unzipped, buf, stat.size) != stat.size) ||
 	     !(content = strbuf_slurp_n(buf, stat.size)) ) {
 		if (buf)
 			yfree(buf);
