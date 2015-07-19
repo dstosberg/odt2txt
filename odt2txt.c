@@ -36,10 +36,10 @@
 #include "mem.h"
 #include "regex.h"
 #include "strbuf.h"
-#ifdef HAVE_LIBZIP
-#  include <zip.h>
-#else
+#ifdef USE_KUNZIP
 #  include "kunzip/kunzip.h"
+#else
+#  include <zip.h>
 #endif
 
 #define VERSION "0.5"
@@ -171,7 +171,7 @@ static void version_info(void)
 {
 	printf("odt2txt %s\n"
 	       "Copyright (c) 2006,2007 Dennis Stosberg <dennis@stosberg.net>\n"
-#ifndef HAVE_LIBZIP
+#ifdef USE_KUNZIP
 	       "Uses the kunzip library, Copyright 2005,2006 by Michael Kohn\n"
 #endif
 	       "\n"
@@ -384,7 +384,9 @@ static STRBUF *read_from_zip(const char *zipfile, const char *filename)
 	int r = 0;
 	STRBUF *content = NULL;
 
-#ifdef HAVE_LIBZIP
+#ifdef USE_KUNZIP
+	r = kunzip_get_offset_by_name((char*)zipfile, (char*)filename, 3, -1);
+#else
 	int zip_error;
 	struct zip *zip = NULL;
 	struct zip_stat stat;
@@ -401,8 +403,6 @@ static STRBUF *read_from_zip(const char *zipfile, const char *filename)
 			zip_close(zip);
 		r = -1;
 	}
-#else
-	r = kunzip_get_offset_by_name((char*)zipfile, (char*)filename, 3, -1);
 #endif
 
 	if(-1 == r) {
@@ -411,7 +411,9 @@ static STRBUF *read_from_zip(const char *zipfile, const char *filename)
 		exit(EXIT_FAILURE);
 	}
 
-#ifdef HAVE_LIBZIP
+#ifdef USE_KUNZIP
+	content = kunzip_next_tobuf((char*)zipfile, r);
+#else
 	if ( !(buf = ymalloc(stat.size + 1)) ||
 	     ((zip_uint64_t)zip_fread(unzipped, buf, stat.size) != stat.size) ||
 	     !(content = strbuf_slurp_n(buf, stat.size)) ) {
@@ -421,8 +423,6 @@ static STRBUF *read_from_zip(const char *zipfile, const char *filename)
 	}
 	zip_fclose(unzipped);
 	zip_close(zip);
-#else
-	content = kunzip_next_tobuf((char*)zipfile, r);
 #endif
 
 	if (!content) {

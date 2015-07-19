@@ -16,11 +16,11 @@ endif
 
 LIBS = -lz
 ZIP_OBJS =
-ifdef HAVE_LIBZIP
-	CFLAGS += -DHAVE_LIBZIP
-	LIBS += -lzip
-else
+ifdef USE_KUNZIP
+	CFLAGS += -DUSE_KUNZIP
 	ZIP_OBJS = kunzip/fileio.o kunzip/zipfile.o
+else
+	LIBS += -lzip
 endif
 
 OBJ = odt2txt.o regex.o mem.o strbuf.o $(ZIP_OBJS)
@@ -97,6 +97,13 @@ t/test-regex: t/test-regex.o regex.o strbuf.o mem.o
 $(ALL_OBJ): Makefile
 
 all: $(BIN)
+	@if [ -n "$(USE_KUNZIP)" ] ; then \
+		echo '' ; \
+		echo ' Please use libzip (http://www.nih.at/libzip) instead of' ; \
+		echo ' kunzip. It is a much more complete zip library and has' ; \
+		echo ' much better handling for exotic and/or broken documents.' ; \
+		echo '' ; \
+	fi
 
 install: $(BIN) $(MAN)
 	$(INSTALL) -d -m755 $(DESTDIR)$(BINDIR)
