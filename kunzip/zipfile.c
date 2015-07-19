@@ -66,10 +66,23 @@ int read_zip_header(FILE *in,
 	local_file_header->last_mod_file_time = read_word(in);
 	local_file_header->last_mod_file_date = read_word(in);
 	local_file_header->crc_32 = read_int(in);
+
 	local_file_header->compressed_size = read_int(in);
+	if (local_file_header->uncompressed_size < 1)
+		return -1;
+
 	local_file_header->uncompressed_size = read_int(in);
+	if (local_file_header->uncompressed_size < 1)
+		return -1;
+
 	local_file_header->file_name_length = read_word(in);
+	if (local_file_header->file_name_length < 1)
+		return -1;
+
 	local_file_header->extra_field_length = read_word(in);
+	if (local_file_header->extra_field_length < 1)
+		return -1;
+
 	local_file_header->descriptor_length = 0;
 
 	/* if the 4th bit in the general_purpose_bit_flag is set,
