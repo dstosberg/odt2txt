@@ -41,32 +41,5 @@ Windows (Cygwin):
 	You need to install libiconv.
 
 Windows (mingw32):
-	This is a little harder, but will produce a binary that has no
-	further dependencies.  I don't have a Windows system here but I have
-	a Debian Sarge system with a cross-compile environment.  The
-	resulting binary has been reported to work without problems.  I guess
-	the same process should work with a native mingw environment in a
-	similar way.
+	See win32/Dockerfile for a recipe build a windows package.
 
-	Install mingw32, mingw32-binutils and mingw32-runtime.  Download and
-	untar GNU libiconv, configure and build and install it:
-
-	$ ./configure --host=i586-mingw32msvc --prefix=/usr/i586-mingw32msvc/
-	$ make
-	$ su -c "make install"
-
-	Download GNU regex-0.12, untar it (for example to /tmp/regex-0.12)
-	and compile the source file:
-
-	$ i586-mingw32msvc-gcc -DSTDC_HEADERS=1 -c regex.c
-
-	Then go into the odt2txt source directory and build it:
-
-	$ make CC=i586-mingw32msvc-gcc MINGW32=1 REGEX_DIR=/tmp/regex-0.12
-
-	The result should be a file named odt2txt.exe.  The only dependency
-	is the file libiconv-2.dll which was built from your iconv source
-	directory.
-
-	You can also link statically against libiconv if you add
-	STATIC=1 ICONV_DIR=<your_iconv_dir> to the make command line.
