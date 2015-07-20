@@ -74,11 +74,13 @@ ifeq ($(UNAME_O),Cygwin)
 	EXT = .exe
 endif
 ifneq ($(MINGW32),)
-	CFLAGS += -DICONV_CHAR="const char" -I$(REGEX_DIR) -I$(ZLIB_DIR)
+	CFLAGS += -I$(REGEX_DIR) -I$(ZLIB_DIR) -I$(ICONV_DIR)/include/ -I$(LIBZIP_DIR)/lib/
 	LIBS = $(REGEX_DIR)/regex.o
 	ifdef STATIC
+		CFLAGS += -DZIP_STATIC
 		LIBS += $(wildcard $(ICONV_DIR)/lib/.libs/*.o)
-		LIBS += $(ZLIB_DIR)/zlib.a
+		LIBS += $(LIBZIP_DIR)/lib/.libs/libzip.a
+		LIBS += $(ZLIB_DIR)/libz.a
 	else
 		LIBS += -liconv
 	endif
