@@ -437,17 +437,15 @@ static STRBUF *read_from_zip(const char *zipfile, const char *filename)
 	return content;
 }
 
-static STRBUF *read_from_xml(const char *zipfile, const char *filename)
+static STRBUF *read_from_xml(const char *xmlfile, const char *filename)
 {
-
-	FILE *in = fopen(zipfile, "rb");
+	FILE *in = fopen(xmlfile, "rb");
 	if (in == 0) {
 		fprintf(stderr, "Can't open %s.\n", filename);
 		exit(EXIT_FAILURE);
 	}
 
 	STRBUF *content = strbuf_new();
-
 	strbuf_append_file(content, in);
 
 	fclose(in);
