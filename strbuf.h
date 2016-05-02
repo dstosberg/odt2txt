@@ -56,6 +56,12 @@ size_t strbuf_append(STRBUF *buf, const char *str);
 size_t strbuf_append_inflate(STRBUF *buf, FILE *in);
 
 /*
+ * Reads a data stream from in and appends it to the buffer out.
+ * Returns the number of appended characters.
+ */
+size_t strbuf_append_file(STRBUF *buf, FILE *in);
+
+/*
  * Returns a pointer to the contained string.
  */
 const char *strbuf_get(STRBUF *buf);
