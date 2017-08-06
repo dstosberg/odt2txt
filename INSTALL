@@ -43,3 +43,7 @@ Windows (Cygwin):
 Windows (mingw32):
 	See win32/Dockerfile for a recipe build a windows package.
 
+Windows (msys):
+	You need to specify the arch type.
+        -run make ARCH=32
+        -run make ARCH=64

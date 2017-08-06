@@ -73,6 +73,11 @@ ifeq ($(UNAME_O),Cygwin)
 	LIBS += -liconv
 	EXT = .exe
 endif
+ifeq ($(UNAME_O),Msys)
+	CFLAGS += -I/mingw$(ARCH)/lib/libzip/include
+	LIBS += -liconv -llibzip -lzip -lz -L/mingw$(ARCH)/lib
+	EXT = .exe
+endif
 ifneq ($(MINGW32),)
 	CFLAGS += -I$(REGEX_DIR) -I$(ZLIB_DIR) -I$(ICONV_DIR)/include/ -I$(LIBZIP_DIR)/lib/
 	LIBS = $(REGEX_DIR)/regex.o
