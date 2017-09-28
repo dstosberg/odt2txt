@@ -5,12 +5,13 @@ Solaris, FreeBSD, OpenBSD and NetBSD.
 To build odt2txt you need GNU make on all platforms.  On platforms
 other than Linux and Cygwin, it is usually called "gmake".
 
+You also need libzip (https://nih.at/libzip/) including its
+development headers.
+
 Linux:
-	A modern Linux system has everything you need in the
-	libc. Just run "make" in the source directory.
+	Just run "make" in the source directory.
 
 Solaris:
-	Everything you need comes with the system.
 	I have test-compiled odt2txt on Solaris 9 (sparc) and
 	Solaris 10 (x86), both with gcc and the Sun C Compiler.
 
@@ -34,8 +35,8 @@ NetBSD:
 	you need.
 
 HP-UX:
-        If zlib is not already installed on the system, build it.  Then
-        build odt2txt with "gmake ZLIB_DIR=/path/to/zlib"
+	If zlib is not already installed on the system, build it.  Then
+	build odt2txt with "gmake ZLIB_DIR=/path/to/zlib"
 
 Windows (Cygwin):
 	You need to install libiconv.
