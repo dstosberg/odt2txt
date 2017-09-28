@@ -463,6 +463,9 @@ static void format_doc(STRBUF *buf, int raw_input)
 		RS_G("<office:binary-data>[^>]*</office:binary-data>", ""); /* remove binary */
 	}
 
+        /* remove soft-page-breaks. We don't need them and they may disturb later decoding */
+        RS_G("<text:soft-page-break/>", "");
+
 	/* headline, first level */
 	RS_E("<text:h[^>]*outline-level=\"1\"[^>]*>([^<]*)<[^>]*>", &h1);
 	RS_E("<text:h[^>]*>([^<]*)<[^>]*>", &h2);  /* other headlines */
