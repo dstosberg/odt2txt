@@ -114,7 +114,7 @@ static MEMINFO *meminfo_getinfo(void *p) {
 static void print_memory_stats(void) {
 	size_t i;
 
-	if(mem_num_malloced == mem_num_malloced
+	if(mem_num_malloced == mem_num_freed
 	   && mem_bytes_malloced == mem_bytes_freed)
 		return;
 
