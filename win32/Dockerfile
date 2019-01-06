@@ -29,7 +29,7 @@ RUN cd /tmp \
     && i686-w64-mingw32-gcc -DSTDC_HEADERS=1 -c regex.c
 
 RUN cd /tmp \
-    && wget http://zlib.net/zlib-1.2.8.tar.gz \
+    && wget http://zlib.net/fossils/zlib-1.2.8.tar.gz \
     && tar xzf zlib-1.2.8.tar.gz \
     && cd zlib-1.2.8 \
     && make -f win32/Makefile.gcc PREFIX=i686-w64-mingw32-
